@@ -5,6 +5,7 @@ import {
 } from '../../../common/js/bsToast';
 import api from '@/common/js/api';
 import { $, on } from '@/common/js/dom';
+import { updateModelTasks } from './tasks';
 let latestTableAccordionRequestId = 0;
 
 async function fetchModels(appState) {
@@ -57,6 +58,7 @@ function renderCurrentProjectModels(appState) {
     emptyItem.textContent = 'No models found for current project.';
     modelList.appendChild(emptyItem);
     updateTableAccordion(appState); // Clear tables since no model is selected
+    updateModelTasks(appState);
     return;
   }
 
@@ -76,6 +78,7 @@ function renderCurrentProjectModels(appState) {
       appState.selected_model = item.textContent;
       updateModelActionVisibility(appState);
       updateTableAccordion(appState); // Refresh tables for the newly selected model
+      updateModelTasks(appState); // Refresh tasks for the newly selected model
     });
   });
   // update appState.selected_model to first model if not set
@@ -95,6 +98,7 @@ function renderCurrentProjectModels(appState) {
   }
   updateModelActionVisibility(appState);
   updateTableAccordion(appState); // Refresh tables for the newly selected model
+  updateModelTasks(appState); // Refresh tasks for the newly selected model
 }
 
 /**
@@ -2138,6 +2142,7 @@ function setupUploadExcel(appState) {
       buildResultsTable(pendingSheetNames, response, sheetActions);
       if (shouldRefreshTables) {
         await updateTableAccordion(appState);
+        updateModelTasks(appState); // Refresh tasks for the newly uploaded sheets
       }
       showResultsView();
     } catch {
