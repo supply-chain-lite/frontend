@@ -69,7 +69,7 @@ function openTaskModal(appState, task) {
   const modalBody = $('#runTaskModalBody');
   const modalLabel = $('#runTaskModalLabel');
   const submitBtn = $('#submitRunTaskBtn');
-  if (!modalEl || !modalBody) return;
+  if (!modalEl || !modalBody || !modalLabel || !submitBtn || !submitBtn.parentNode) return;
 
   modalLabel.textContent = task.task_name;
   modalBody.innerHTML = '';
