@@ -1,0 +1,309 @@
+import { $, on } from '@/common/js/dom';
+import api from '@/common/js/api';
+import { bsToastSuccess } from '@/common/js/bsToast';
+
+let latestTaskListRequestId = 0;
+
+async function updateModelTasks(appState) {
+  const requestId = ++latestTaskListRequestId;
+  const selectedModelTasks = $('#selectedModelTasks');
+  if (!selectedModelTasks) return;
+  const runTasksList = $('#runTasksList');
+  if (runTasksList) runTasksList.innerHTML = '';
+  appState.task_list = [];
+
+  if (!appState.currentProject || !appState.selected_model) {
+    selectedModelTasks.style.display = 'none';
+    return;
+  }
+
+  try {
+    const data = await api.post('/tasks/list', {
+      project_name: appState.currentProject,
+      model_name: appState.selected_model,
+    });
+    if (requestId !== latestTaskListRequestId) return;
+
+    const taskList = data.tasks || [];
+    appState.task_list = taskList;
+    if (taskList.length === 0) {
+      selectedModelTasks.style.display = 'none';
+      return;
+    }
+    displayModelTasks(appState);
+  } catch {
+    appState.task_list = [];
+    selectedModelTasks.style.display = 'none';
+  }
+}
+
+/* ── Display task names in the Run dropdown ─────────────────────────────── */
+
+function displayModelTasks(appState) {
+  const container = $('#selectedModelTasks');
+  const taskListEl = $('#runTasksList');
+  if (!container || !taskListEl) return;
+
+  container.style.display = '';
+  taskListEl.innerHTML = '';
+
+  appState.task_list.forEach((task) => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.className = 'dropdown-item';
+    a.href = '#';
+    a.textContent = task.task_name;
+    on(a, 'click', (e) => {
+      e.preventDefault();
+      openTaskModal(appState, task);
+    });
+    li.appendChild(a);
+    taskListEl.appendChild(li);
+  });
+}
+
+/* ── Open the task parameter modal ──────────────────────────────────────── */
+
+function openTaskModal(appState, task) {
+  const modalEl = $('#runTaskModal');
+  const modalBody = $('#runTaskModalBody');
+  const modalLabel = $('#runTaskModalLabel');
+  const submitBtn = $('#submitRunTaskBtn');
+  if (!modalEl || !modalBody || !modalLabel || !submitBtn || !submitBtn.parentNode) return;
+
+  modalLabel.textContent = task.task_name;
+  modalBody.innerHTML = '';
+
+  if (!task.task_params || task.task_params.length === 0) {
+    const p = document.createElement('p');
+    p.className = 'text-muted mb-0';
+    p.textContent = 'No parameters required for this task.';
+    modalBody.appendChild(p);
+  } else {
+    task.task_params.forEach((param) => {
+      modalBody.appendChild(buildParameterField(param));
+    });
+  }
+
+  // Replace button to remove any previous click listeners
+  const newBtn = submitBtn.cloneNode(true);
+  submitBtn.parentNode.replaceChild(newBtn, submitBtn);
+  on(newBtn, 'click', () => submitTask(appState, task, newBtn));
+
+  const modal = new window.bootstrap.Modal(modalEl);
+  modal.show();
+}
+
+/* ── Build a form field for a single task parameter ─────────────────────── */
+
+function buildParameterField(param) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'mb-3 row align-items-center';
+
+  const labelCol = document.createElement('div');
+  labelCol.className = 'col-4';
+
+  const inputCol = document.createElement('div');
+  inputCol.className = 'col-8';
+
+  const label = document.createElement('label');
+  label.className = 'col-form-label';
+  label.textContent = param.ParameterName;
+  labelCol.appendChild(label);
+
+  switch (param.ParameterType) {
+    case 'SELECT': {
+      const select = document.createElement('select');
+      select.className = 'form-select';
+      select.dataset.paramName = param.ParameterName;
+      select.dataset.paramType = param.ParameterType;
+
+      (param.ParameterValues || []).forEach((val) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        if (val === param.ParameterValue) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      inputCol.appendChild(select);
+      break;
+    }
+
+    case 'CHECKBOX': {
+      const div = document.createElement('div');
+      div.className = 'form-check mt-1';
+
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'form-check-input';
+      input.id = `param_${param.ParameterName.replace(/\s+/g, '_')}`;
+      input.checked = !!param.ParameterValue;
+      input.dataset.paramName = param.ParameterName;
+      input.dataset.paramType = param.ParameterType;
+
+      div.appendChild(input);
+      inputCol.appendChild(div);
+      label.htmlFor = input.id;
+      break;
+    }
+
+    case 'TEXT': {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control';
+      input.value = param.ParameterValue || '';
+      input.dataset.paramName = param.ParameterName;
+      input.dataset.paramType = param.ParameterType;
+
+      inputCol.appendChild(input);
+      break;
+    }
+
+    case 'NUMBER': {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.className = 'form-control';
+      input.value = param.ParameterValue !== null ? param.ParameterValue : '';
+      input.dataset.paramName = param.ParameterName;
+      input.dataset.paramType = param.ParameterType;
+
+      inputCol.appendChild(input);
+      break;
+    }
+
+    case 'MULTI_SELECT': {
+      // top-align label when there are multiple checkboxes
+      wrapper.classList.remove('align-items-center');
+      wrapper.classList.add('align-items-start');
+
+      const selected = Array.isArray(param.ParameterValue) ? param.ParameterValue : [];
+
+      (param.ParameterValues || []).forEach((val) => {
+        const checkDiv = document.createElement('div');
+        checkDiv.className = 'form-check';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.className = 'form-check-input';
+        input.value = val;
+        input.checked = selected.includes(val);
+        input.dataset.paramName = param.ParameterName;
+        input.dataset.paramType = 'MULTI_SELECT';
+        input.id = `param_${param.ParameterName.replace(/\s+/g, '_')}_${val.replace(/\s+/g, '_')}`;
+
+        const checkLabel = document.createElement('label');
+        checkLabel.className = 'form-check-label';
+        checkLabel.htmlFor = input.id;
+        checkLabel.textContent = val;
+
+        checkDiv.appendChild(input);
+        checkDiv.appendChild(checkLabel);
+        inputCol.appendChild(checkDiv);
+      });
+      break;
+    }
+
+    default: {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control';
+      input.value = param.ParameterValue !== null ? String(param.ParameterValue) : '';
+      input.dataset.paramName = param.ParameterName;
+      input.dataset.paramType = param.ParameterType || 'TEXT';
+
+      inputCol.appendChild(input);
+      break;
+    }
+  }
+
+  wrapper.appendChild(labelCol);
+  wrapper.appendChild(inputCol);
+  return wrapper;
+}
+
+/* ── Collect current parameter values from the modal form ───────────────── */
+
+function collectTaskParams() {
+  const params = [];
+  const modalBody = $('#runTaskModalBody');
+  if (!modalBody) return params;
+
+  const fieldGroups = modalBody.querySelectorAll('.mb-3');
+
+  fieldGroups.forEach((group) => {
+    // MULTI_SELECT — multiple checkboxes sharing a param name
+    const multiCheckboxes = group.querySelectorAll('input[data-param-type="MULTI_SELECT"]');
+    if (multiCheckboxes.length > 0) {
+      const name = multiCheckboxes[0].dataset.paramName;
+      const values = [];
+      multiCheckboxes.forEach((cb) => {
+        if (cb.checked) values.push(cb.value);
+      });
+      params.push({ ParameterName: name, ParameterValue: values });
+      return;
+    }
+
+    // CHECKBOX
+    const checkbox = group.querySelector('input[data-param-type="CHECKBOX"]');
+    if (checkbox) {
+      params.push({ ParameterName: checkbox.dataset.paramName, ParameterValue: checkbox.checked });
+      return;
+    }
+
+    // SELECT
+    const select = group.querySelector('select[data-param-name]');
+    if (select) {
+      params.push({ ParameterName: select.dataset.paramName, ParameterValue: select.value });
+      return;
+    }
+
+    // NUMBER
+    const numberInput = group.querySelector('input[data-param-type="NUMBER"]');
+    if (numberInput) {
+      params.push({
+        ParameterName: numberInput.dataset.paramName,
+        ParameterValue: numberInput.value !== '' ? Number(numberInput.value) : null,
+      });
+      return;
+    }
+
+    // TEXT (or unknown fallback)
+    const textInput = group.querySelector('input[data-param-name]');
+    if (textInput) {
+      params.push({ ParameterName: textInput.dataset.paramName, ParameterValue: textInput.value });
+    }
+  });
+
+  return params;
+}
+
+/* ── Submit the task ────────────────────────────────────────────────────── */
+
+async function submitTask(appState, task, submitBtn) {
+  const taskParams = collectTaskParams();
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML =
+    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting…';
+
+  try {
+    await api.post('/tasks/run', {
+      project_name: appState.currentProject,
+      model_name: appState.selected_model,
+      task_id: task.task_id,
+      task_params: taskParams,
+    });
+
+    const modalEl = $('#runTaskModal');
+    window.bootstrap.Modal.getInstance(modalEl)?.hide();
+    bsToastSuccess(`Task "${task.task_name}" submitted successfully.`);
+  } catch {
+    // api.post already shows error toast
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit';
+  }
+}
+
+export { updateModelTasks };

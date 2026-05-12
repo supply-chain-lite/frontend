@@ -310,8 +310,17 @@
                 </li>
               </ul>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">Link1</a>
+            <li class="nav-item dropdown" id="selectedModelTasks" style="display: none">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Run
+              </a>
+              <ul class="dropdown-menu" id="runTasksList"></ul>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#">Link2</a>
@@ -1811,6 +1820,36 @@
 
           <div class="modal-footer">
             <button class="btn btn-dark" data-bs-dismiss="modal" aria-label="Close">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Run Task Modal -->
+    <div
+      class="modal fade"
+      id="runTaskModal"
+      tabindex="-1"
+      aria-labelledby="runTaskModalLabel"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="runTaskModalLabel">Run Task</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" id="runTaskModalBody"></div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-dark" id="submitRunTaskBtn">Submit</button>
           </div>
         </div>
       </div>
