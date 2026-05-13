@@ -138,3 +138,27 @@ div.with-border {
 #uploadExcelResultsView .upload-excel-results-table td {
   overflow-wrap: anywhere;
 }
+
+/* ── Task Running Card ───────────────────────────────────────────────────── */
+@keyframes task-stripe-move {
+  from { background-position: 40px 0; }
+  to   { background-position: 0 0; }
+}
+
+.task-card {
+  background-color: var(--bs-body-bg);
+  border: 2px solid var(--bs-heading-color);
+  border-radius: 8px;
+  box-shadow: var(--bs-box-shadow-sm);
+  max-width: 480px;
+}
+
+.progress {
+  height: 24px;
+}
+
+.progress-bar {
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+}

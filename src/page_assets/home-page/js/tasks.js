@@ -1,8 +1,13 @@
 import { $, on } from '@/common/js/dom';
 import api from '@/common/js/api';
-import { bsToastSuccess } from '@/common/js/bsToast';
+import { bsToastSuccess, bsToastError } from '@/common/js/bsToast';
+
+const RUNNING_TASK_POLL_INTERVAL_MS = 30000;
 
 let latestTaskListRequestId = 0;
+let runningTaskPollingTimer = null;
+// Map of task_id -> { task_name, model_name, project_name } for tracking running tasks
+const trackedRunningTasks = new Map();
 
 async function updateModelTasks(appState) {
   const requestId = ++latestTaskListRequestId;
@@ -295,6 +300,8 @@ async function submitTask(appState, task, submitBtn) {
       task_params: taskParams,
     });
 
+    updateRunningTaskUI(appState);
+
     const modalEl = $('#runTaskModal');
     window.bootstrap.Modal.getInstance(modalEl)?.hide();
     bsToastSuccess(`Task "${task.task_name}" submitted successfully.`);
@@ -306,4 +313,147 @@ async function submitTask(appState, task, submitBtn) {
   }
 }
 
-export { updateModelTasks };
+async function updateRunningTaskUI(appState) {
+  const container = $('#inProgressContainer');
+  if (!container) return;
+
+  // Clear any existing polling timer
+  if (runningTaskPollingTimer) {
+    window.clearTimeout(runningTaskPollingTimer);
+    runningTaskPollingTimer = null;
+  }
+
+  try {
+    const data = await api.post('/tasks/running');
+    const runningTasks = data.running_tasks || [];
+
+    // Build set of currently running task IDs
+    const currentRunningIds = new Set(runningTasks.map((t) => t.task_id));
+
+    // Check for tasks that were running but are no longer in the list
+    for (const [taskId, taskInfo] of trackedRunningTasks) {
+      if (!currentRunningIds.has(taskId)) {
+        // Task is no longer running - fetch its status
+        checkCompletedTaskStatus(taskId, taskInfo);
+        trackedRunningTasks.delete(taskId);
+      }
+    }
+
+    // Update tracked tasks with current running tasks
+    runningTasks.forEach((task) => {
+      if (!trackedRunningTasks.has(task.task_id)) {
+        trackedRunningTasks.set(task.task_id, {
+          task_name: task.task_name,
+          model_name: task.model_name,
+          project_name: task.project_name,
+        });
+      }
+    });
+
+    // Clear existing task cards
+    container.innerHTML = '';
+
+    if (runningTasks.length === 0) {
+      // No running tasks - container stays empty (hidden)
+      return;
+    }
+
+    // Create task cards for each running task
+    runningTasks.forEach((task) => {
+      const card = createRunningTaskCard(task);
+      container.appendChild(card);
+    });
+
+    // Schedule next poll since there are running tasks
+    runningTaskPollingTimer = window.setTimeout(() => {
+      updateRunningTaskUI(appState);
+    }, RUNNING_TASK_POLL_INTERVAL_MS);
+  } catch {
+    // On error, clear the container
+    container.innerHTML = '';
+  }
+}
+
+async function checkCompletedTaskStatus(taskId, taskInfo) {
+  try {
+    const data = await api.post('/tasks/status', {
+      task_id: taskId,
+    });
+
+    const status = (data.message || '').toUpperCase();
+    const taskName = taskInfo.task_name;
+
+    if (status === 'SUCCESS' || status === 'COMPLETED') {
+      bsToastSuccess(
+        `Task "${taskName}" for model "${taskInfo.model_name}" completed successfully.`,
+        5000
+      );
+    } else if (
+      status === 'ERROR' ||
+      status === 'ERRORED' ||
+      status === 'FAILURE' ||
+      status === 'FAILED'
+    ) {
+      bsToastError(`Task "${taskName}" for model "${taskInfo.model_name}" failed.`);
+    } else if (status === 'CANCELLED' || status === 'REVOKED') {
+      bsToastError(
+        `Task "${taskName}" for model "${taskInfo.model_name}" was ${status.toLowerCase()}.`
+      );
+    }
+  } catch {
+    // Silently fail - task status check is best effort
+  }
+}
+
+function createRunningTaskCard(task) {
+  const card = document.createElement('div');
+  card.className = 'task-card p-3 mb-3';
+
+  const message = document.createElement('p');
+  message.className = 'task-card-message mb-2';
+  message.innerHTML = `Please wait while task: <span class="fw-bold">${escapeHtml(task.task_name)}</span> completes for model: <strong>${escapeHtml(task.model_name)}</strong>`;
+
+  const progressWrapper = document.createElement('div');
+  progressWrapper.className = 'progress mb-2';
+
+  const progressBar = document.createElement('div');
+  progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
+  progressBar.setAttribute('role', 'progressbar');
+  progressBar.setAttribute('aria-valuenow', '100');
+  progressBar.setAttribute('aria-valuemin', '0');
+  progressBar.setAttribute('aria-valuemax', '100');
+  progressBar.textContent = 'Running';
+
+  progressWrapper.appendChild(progressBar);
+
+  const btnWrapper = document.createElement('div');
+  btnWrapper.className = 'd-flex justify-content-end';
+
+  const detailsBtn = document.createElement('button');
+  detailsBtn.className = 'btn btn-sm btn-outline-dark';
+  detailsBtn.textContent = 'View Details';
+  on(detailsBtn, 'click', () => {
+    const params = new URLSearchParams({
+      task_id: task.task_id,
+      model_name: task.model_name,
+      project_name: task.project_name,
+    });
+    window.open(`task-details.html?${params.toString()}`, '_blank');
+  });
+
+  btnWrapper.appendChild(detailsBtn);
+
+  card.appendChild(message);
+  card.appendChild(progressWrapper);
+  card.appendChild(btnWrapper);
+
+  return card;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+export { updateModelTasks, updateRunningTaskUI };
