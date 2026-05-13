@@ -493,16 +493,19 @@ function setupRestoreModel(appState) {
   const modal = $('#restoreModelModal');
   const currentProjectInput = $('#restoreCurrentProject');
   const currentModelInput = $('#restoreModelName');
-  const backupSelect = $('#restoreBackupSelect');
+  const backupTableBody = $('#restoreBackupTableBody');
+  const emptyMessage = $('#restoreBackupEmptyMessage');
   const submitBtn = $('#submitRestoreModelBtn');
-  if (!modal || !submitBtn || !backupSelect) return;
+  if (!modal || !submitBtn || !backupTableBody) return;
 
   on(modal, 'show.bs.modal', async () => {
     currentProjectInput.value = appState.currentProject || '';
     currentProjectInput.disabled = true;
     currentModelInput.value = appState.selected_model || '';
     currentModelInput.disabled = true;
-    backupSelect.innerHTML = '<option disabled selected value="">Loading backups...</option>';
+    backupTableBody.innerHTML =
+      '<tr><td colspan="3" class="text-center text-muted">Loading backups…</td></tr>';
+    emptyMessage.classList.add('d-none');
     submitBtn.disabled = true;
 
     if (!appState.currentProject || !appState.selected_model) {
@@ -518,44 +521,60 @@ function setupRestoreModel(appState) {
       });
 
       const backups = data.model_backups || [];
+      backupTableBody.innerHTML = '';
 
-      backupSelect.innerHTML = '';
-
-      const placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.disabled = true;
-      placeholder.selected = true;
-      placeholder.textContent = backups.length ? 'Select backup' : 'No backups available';
-      backupSelect.appendChild(placeholder);
+      if (!backups.length) {
+        emptyMessage.classList.remove('d-none');
+        submitBtn.disabled = true;
+        return;
+      }
 
       backups.forEach((backup) => {
-        const option = document.createElement('option');
-        option.value = backup[0];
-        const comment = backup[1] || 'No comment';
-        const dateTime = formatBackupDateTime(backup[2] || backup[3] || backup[4]);
-        option.textContent = `${comment} (${dateTime})`;
-        backupSelect.appendChild(option);
-      });
+        const tr = document.createElement('tr');
 
-      submitBtn.disabled = !backups.length;
+        const tdRadio = document.createElement('td');
+        tdRadio.className = 'text-center';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.className = 'form-check-input';
+        radio.name = 'restoreBackupRadio';
+        radio.value = backup[0];
+        tdRadio.appendChild(radio);
+
+        const tdComment = document.createElement('td');
+        tdComment.textContent = backup[1] || 'No comment';
+
+        const tdDate = document.createElement('td');
+        tdDate.textContent = formatBackupDateTime(backup[2] || backup[3] || backup[4]);
+
+        tr.appendChild(tdRadio);
+        tr.appendChild(tdComment);
+        tr.appendChild(tdDate);
+        backupTableBody.appendChild(tr);
+      });
     } catch {
-      backupSelect.innerHTML = '<option disabled selected value="">Unable to load backups</option>';
+      backupTableBody.innerHTML =
+        '<tr><td colspan="3" class="text-center text-muted">Unable to load backups</td></tr>';
       submitBtn.disabled = true;
     }
   });
 
-  on(backupSelect, 'change', () => {
-    submitBtn.disabled = !backupSelect.value;
+  on(backupTableBody, 'change', (e) => {
+    if (e.target.name === 'restoreBackupRadio') {
+      submitBtn.disabled = false;
+    }
   });
 
   on(modal, 'hidden.bs.modal', () => {
-    backupSelect.innerHTML = '<option disabled selected value="">Select backup</option>';
+    backupTableBody.innerHTML = '';
+    emptyMessage.classList.add('d-none');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Restore';
   });
 
   on(submitBtn, 'click', async () => {
-    const backupId = backupSelect.value;
+    const selected = modal.querySelector('input[name="restoreBackupRadio"]:checked');
+    const backupId = selected?.value;
     if (!backupId) {
       toastError('Please select a backup to restore.');
       return;
