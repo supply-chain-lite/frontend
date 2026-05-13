@@ -6,6 +6,7 @@ import '../css/main.css'; // home-page-specific styles
 
 import api from '@/common/js/api';
 import { initModels } from './models';
+import { updateRunningTaskUI } from './tasks';
 import { initProjects } from './projects';
 import { initNotifications } from './notifications';
 import { initFiles } from './files';
@@ -107,6 +108,8 @@ ready(async () => {
     window.location.href = '/login.html';
     return;
   }
+
+  void updateRunningTaskUI(appState);
 
   // ── Init projects (fetch current + list, wire up modals) ───────────────
   await initProjects(appState);
