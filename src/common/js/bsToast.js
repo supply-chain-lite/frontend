@@ -55,7 +55,8 @@ function getContainer() {
 function show(message, variant = 'success', { delay = 1500, errorCode } = {}) {
   const { bg, icon, label } = VARIANT_MAP[variant] || VARIANT_MAP.info;
   const textColor = variant === 'warning' ? 'text-dark' : 'text-white';
-  const autohide = variant !== 'danger' && variant !== 'warning';
+  let autohide = variant !== 'danger' && variant !== 'warning';
+  if (delay === 0) autohide = false;
   const safeMessage = escapeHtml(message);
   const safeErrorCode = errorCode === null ? '' : escapeHtml(errorCode);
   const codeHtml =

@@ -1,6 +1,7 @@
 import { $, on } from '@/common/js/dom';
 import api from '@/common/js/api';
 import { bsToastSuccess, bsToastError } from '@/common/js/bsToast';
+import { initNotifications } from './notifications';
 
 const RUNNING_TASK_POLL_INTERVAL_MS = 30000;
 
@@ -376,6 +377,7 @@ async function updateRunningTaskUI(appState) {
 
 async function checkCompletedTaskStatus(taskId, taskInfo) {
   try {
+    initNotifications(); // Refresh notifications to get any updates related to the completed task
     const data = await api.post('/tasks/status', {
       task_id: taskId,
     });
