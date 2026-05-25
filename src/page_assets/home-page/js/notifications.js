@@ -1,5 +1,9 @@
 import api from '@/common/js/api';
 import { $ } from '@/common/js/dom';
+import {
+  bsToastSuccess as toastSuccess,
+  bsToastError as toastError,
+} from '../../../common/js/bsToast';
 
 /**
  * Populate the notifications dropdown and update the unread indicator.
@@ -40,6 +44,7 @@ export async function initNotifications() {
 
   notifications.forEach((notification) => {
     const li = document.createElement('li');
+    li.dataset.notificationId = notification.notification_id;
     const a = document.createElement('a');
     a.className = 'dropdown-item d-flex justify-content-between align-items-center';
     a.href = '#';
@@ -50,7 +55,15 @@ export async function initNotifications() {
 
     if (notification.is_read === 0) {
       const badge = document.createElement('span');
-      badge.className = 'badge bg-primary ms-2';
+      if (notification.notification_level === 'INFO') {
+        badge.className = 'badge bg-primary ms-2';
+      } else if (notification.notification_level === 'WARNING') {
+        badge.className = 'badge bg-warning ms-2';
+      } else if (notification.notification_level === 'ERROR') {
+        badge.className = 'badge bg-danger ms-2';
+      } else {
+        badge.className = 'badge bg-secondary ms-2';
+      }
       badge.textContent = 'New';
       a.appendChild(badge);
     }
@@ -59,6 +72,8 @@ export async function initNotifications() {
       e.preventDefault();
       if (notification.notification_type === 'model_share_request') {
         openAcceptModelModal(notification);
+      } else {
+        openNotificationModal(notification);
       }
     });
 
@@ -104,5 +119,105 @@ function openAcceptModelModal(notification) {
   if (modalEl) {
     const modal = new window.bootstrap.Modal(modalEl);
     modal.show();
+  }
+}
+
+/**
+ * Remove the "New" badge from a notification list item and hide
+ * #notificationDot if no unread badges remain.
+ */
+function markNotificationReadInUI(notificationId) {
+  const list = $('#notificationList');
+  if (!list) return;
+
+  const li = list.querySelector(`li[data-notification-id="${notificationId}"]`);
+  if (li) {
+    const newBadge = li.querySelector('.badge');
+    if (newBadge) newBadge.remove();
+  }
+
+  // Hide dot if no "New" badges remain anywhere in the list
+  const remaining = list.querySelectorAll('.badge');
+  const dot = $('#notificationDot');
+  if (dot && remaining.length === 0) {
+    dot.style.display = 'none';
+  }
+}
+
+function openNotificationModal(notification) {
+  const notification_id = notification.notification_id || '';
+  const notification_title = notification.title || 'Notification';
+  const project_name = notification.project_name || '';
+  const model_name = notification.model_name || '';
+  const notification_level = notification.notification_level || 'INFO';
+  const message = notification.message || '';
+
+  // Populate fields
+  const titleInput = $('#notificationModalLabel');
+  const modelInput = $('#notifModalModelName');
+  const projectInput = $('#notifModalProjectName');
+  const messageDiv = $('#notifModalMessage');
+  const hiddenId = $('#notifModalNotificationId');
+
+  if (titleInput) titleInput.textContent = notification_title;
+  if (modelInput) modelInput.value = model_name;
+  if (projectInput) projectInput.value = project_name;
+  if (hiddenId) hiddenId.value = notification_id;
+
+  // Color-code the message based on notification level
+  if (messageDiv) {
+    messageDiv.textContent = message;
+    messageDiv.className = 'alert mb-0';
+    if (notification_level === 'INFO') {
+      messageDiv.classList.add('alert-info');
+    } else if (notification_level === 'WARNING') {
+      messageDiv.classList.add('alert-warning');
+    } else if (notification_level === 'ERROR') {
+      messageDiv.classList.add('alert-danger');
+    } else {
+      messageDiv.classList.add('alert-secondary');
+    }
+  }
+
+  const modalEl = $('#notificationModal');
+  if (!modalEl) return;
+
+  const modal = new window.bootstrap.Modal(modalEl);
+  modal.show();
+
+  // Wire OK button to mark notification as read
+  const okBtn = $('#submitNotifModalOkBtn');
+  if (okBtn) {
+    let isSubmitting = false;
+    const handler = async () => {
+      if (isSubmitting) return;
+      isSubmitting = true;
+      okBtn.disabled = true;
+      if (notification.is_read === 0) {
+        try {
+          await api.post('/models/mark-notification-read', {
+            notification_id: notification_id,
+          });
+          toastSuccess('Notification marked as read');
+          notification.is_read = 1;
+          markNotificationReadInUI(notification_id);
+        } catch {
+          toastError('Failed to mark notification as read');
+        }
+      }
+      okBtn.disabled = false;
+      isSubmitting = false;
+      modal.hide();
+    };
+    okBtn.addEventListener('click', handler);
+
+    // Clean up listener when modal closes by any means (X, backdrop, or OK)
+    modalEl.addEventListener(
+      'hidden.bs.modal',
+      () => {
+        okBtn.removeEventListener('click', handler);
+      },
+      { once: true }
+    );
   }
 }
