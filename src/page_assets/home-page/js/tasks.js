@@ -388,7 +388,7 @@ async function checkCompletedTaskStatus(taskId, taskInfo) {
     if (status === 'SUCCESS' || status === 'COMPLETED') {
       bsToastSuccess(
         `Task "${taskName}" for model "${taskInfo.model_name}" completed successfully.`,
-        5000
+        0
       );
     } else if (
       status === 'ERROR' ||

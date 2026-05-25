@@ -146,7 +146,7 @@ function markNotificationReadInUI(notificationId) {
 
 function openNotificationModal(notification) {
   const notification_id = notification.notification_id || '';
-  const notification_title = notification.title || '';
+  const notification_title = notification.title || 'Notification';
   const project_name = notification.project_name || '';
   const model_name = notification.model_name || '';
   const notification_level = notification.notification_level || 'INFO';
@@ -188,7 +188,11 @@ function openNotificationModal(notification) {
   // Wire OK button to mark notification as read
   const okBtn = $('#submitNotifModalOkBtn');
   if (okBtn) {
+    let isSubmitting = false;
     const handler = async () => {
+      if (isSubmitting) return;
+      isSubmitting = true;
+      okBtn.disabled = true;
       if (notification.is_read === 0) {
         try {
           await api.post('/models/mark-notification-read', {
@@ -201,6 +205,8 @@ function openNotificationModal(notification) {
           toastError('Failed to mark notification as read');
         }
       }
+      okBtn.disabled = false;
+      isSubmitting = false;
       modal.hide();
     };
     okBtn.addEventListener('click', handler);
