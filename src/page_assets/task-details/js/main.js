@@ -2,7 +2,7 @@ import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 window.bootstrap = bootstrap;
 import '../../../scss/styles.scss'; // Bootstrap + SCSS theme
 import '../../../common/css/custom.css'; // shared plain-CSS utilities
-import '../css/main.css'; // task-details-v2-specific styles
+import '../css/main.css'; // task-details-specific styles
 
 import api from '@/common/js/api';
 import { $, on, ready } from '@/common/js/dom';
