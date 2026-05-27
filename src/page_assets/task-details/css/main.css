@@ -1,0 +1,44 @@
+/*
+ * main.css — styles specific to the task-details-v2 page only.
+ *
+ * Imported in src/page_assets/task-details-v2/js/main.js.
+ * Do NOT import this file from any other page.
+ */
+
+/* ── Task log output ──────────────────────────────────────────────────────── */
+/* #taskContent uses d-none toggling, so we set display via plain CSS
+   (Bootstrap's !important d-none will still override when hidden). */
+#taskContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+/* ── Active-task running progress bar ──────────────────────────────────── */
+#taskRunningProgress .progress {
+  height: 24px;
+  width: 320px;
+}
+
+#taskRunningProgress .progress-bar {
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.task-log-area {
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
+  padding: 1rem;
+  border-radius: 0.375rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin-bottom: 0;
+}

@@ -8,6 +8,11 @@
   background-color: transparent;
 }
 
+#notificationList {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
 #modelListBody {
   overflow-y: auto;
   min-height: 200px;

@@ -151,6 +151,7 @@ function openNotificationModal(notification) {
   const model_name = notification.model_name || '';
   const notification_level = notification.notification_level || 'INFO';
   const message = notification.message || '';
+  const task_id = notification.task_id || null;
 
   // Populate fields
   const titleInput = $('#notificationModalLabel');
@@ -162,7 +163,10 @@ function openNotificationModal(notification) {
   if (titleInput) titleInput.textContent = notification_title;
   if (modelInput) modelInput.value = model_name;
   if (projectInput) projectInput.value = project_name;
-  if (hiddenId) hiddenId.value = notification_id;
+  if (hiddenId) {
+    hiddenId.value = notification_id;
+    if (task_id) hiddenId.dataset.taskId = task_id;
+  }
 
   // Color-code the message based on notification level
   if (messageDiv) {
@@ -185,39 +189,74 @@ function openNotificationModal(notification) {
   const modal = new window.bootstrap.Modal(modalEl);
   modal.show();
 
+  // Show or hide the Details button based on task_id
+  const detailsBtn = $('#submitNotifModalDetailsBtn');
+  if (detailsBtn) {
+    if (task_id) {
+      detailsBtn.classList.remove('d-none');
+    } else {
+      detailsBtn.classList.add('d-none');
+    }
+  }
+
   // Wire OK button to mark notification as read
   const okBtn = $('#submitNotifModalOkBtn');
-  if (okBtn) {
-    let isSubmitting = false;
-    const handler = async () => {
-      if (isSubmitting) return;
-      isSubmitting = true;
-      okBtn.disabled = true;
-      if (notification.is_read === 0) {
-        try {
-          await api.post('/models/mark-notification-read', {
-            notification_id: notification_id,
-          });
-          toastSuccess('Notification marked as read');
-          notification.is_read = 1;
-          markNotificationReadInUI(notification_id);
-        } catch {
-          toastError('Failed to mark notification as read');
-        }
-      }
-      okBtn.disabled = false;
-      isSubmitting = false;
-      modal.hide();
-    };
-    okBtn.addEventListener('click', handler);
 
-    // Clean up listener when modal closes by any means (X, backdrop, or OK)
-    modalEl.addEventListener(
-      'hidden.bs.modal',
-      () => {
-        okBtn.removeEventListener('click', handler);
-      },
-      { once: true }
-    );
-  }
+  let isSubmitting = false;
+
+  /** Mark the notification as read (shared by OK and Details). */
+  const markRead = async () => {
+    if (notification.is_read === 0) {
+      try {
+        await api.post('/models/mark-notification-read', {
+          notification_id: notification_id,
+        });
+        toastSuccess('Notification marked as read', 400);
+        notification.is_read = 1;
+        markNotificationReadInUI(notification_id);
+      } catch {
+        toastError('Failed to mark notification as read');
+      }
+    }
+  };
+
+  const okHandler = async () => {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    if (okBtn) okBtn.disabled = true;
+    await markRead();
+    if (okBtn) okBtn.disabled = false;
+    isSubmitting = false;
+    modal.hide();
+  };
+
+  const detailsHandler = async () => {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    if (detailsBtn) detailsBtn.disabled = true;
+    await markRead();
+    if (detailsBtn) detailsBtn.disabled = false;
+    isSubmitting = false;
+    modal.hide();
+
+    const params = new URLSearchParams({
+      task_id: task_id,
+      model_name: model_name,
+      project_name: project_name,
+    });
+    window.open(`task-details.html?${params.toString()}`, '_blank');
+  };
+
+  if (okBtn) okBtn.addEventListener('click', okHandler);
+  if (detailsBtn && task_id) detailsBtn.addEventListener('click', detailsHandler);
+
+  // Clean up listeners when modal closes by any means (X, backdrop, OK, or Details)
+  modalEl.addEventListener(
+    'hidden.bs.modal',
+    () => {
+      if (okBtn) okBtn.removeEventListener('click', okHandler);
+      if (detailsBtn) detailsBtn.removeEventListener('click', detailsHandler);
+    },
+    { once: true }
+  );
 }
