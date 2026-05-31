@@ -161,9 +161,48 @@ async function showDdl(name) {
 
 // ===== Query Execution =====
 
+function getQueryAtCursor() {
+  const fullText = sqlEditorEl.value;
+  const cursorPos = sqlEditorEl.selectionStart;
+  if (!fullText.trim()) return '';
+
+  const stmts = [];
+  let start = 0;
+  let inString = false;
+  let stringChar = '';
+  for (let i = 0; i < fullText.length; i++) {
+    const ch = fullText[i];
+    if (inString) {
+      if (ch === stringChar && fullText[i - 1] !== '\\') inString = false;
+    } else {
+      if (ch === "'" || ch === '"') {
+        inString = true;
+        stringChar = ch;
+      } else if (ch === ';') {
+        stmts.push({ sql: fullText.slice(start, i).trim(), start, end: i });
+        start = i + 1;
+      }
+    }
+  }
+  // Trailing statement after last semicolon
+  const last = fullText.slice(start).trim();
+  if (last) stmts.push({ sql: last, start, end: fullText.length });
+
+  // Find the statement containing the cursor
+  for (const stmt of stmts) {
+    if (cursorPos >= stmt.start && cursorPos <= stmt.end) {
+      return stmt.sql;
+    }
+  }
+  // Cursor after last semicolon with no trailing text — return last statement
+  if (stmts.length > 0) return stmts[stmts.length - 1].sql;
+  return fullText.trim();
+}
+
 async function executeQuery(sqlOverride = null) {
   if (isExecuting) return;
-  const sql = (sqlOverride ?? getEditorValue()).trim();
+  const raw = sqlOverride ?? getQueryAtCursor();
+  const sql = raw.trim();
   if (!sql) return;
 
   isExecuting = true;
