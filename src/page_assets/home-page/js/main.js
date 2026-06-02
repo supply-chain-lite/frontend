@@ -5,6 +5,7 @@ import '../../../common/css/custom.css'; // shared plain-CSS utilities
 import '../css/main.css'; // home-page-specific styles
 
 import api from '@/common/js/api';
+import { saveRedirectUrl, handleAccessControlRedirect, currentPageUrl } from '@/common/js/auth';
 import { initModels } from './models';
 import { updateRunningTaskUI } from './tasks';
 import { initProjects } from './projects';
@@ -96,15 +97,18 @@ ready(async () => {
   // ── Auth guard: redirect to login if not authenticated ────────────────
   let user;
   try {
-    user = await api.post('/auth/me', {}, { silent: true });
+    user = await api.post('/auth/me', { page_url: currentPageUrl() }, { silent: true });
     if (user && user.role_name) {
       appState.user = user;
       sessionStorage.setItem('user', JSON.stringify(user));
+      if (handleAccessControlRedirect(user)) return;
     } else {
+      saveRedirectUrl();
       window.location.href = '/login.html';
       return;
     }
   } catch {
+    saveRedirectUrl();
     window.location.href = '/login.html';
     return;
   }

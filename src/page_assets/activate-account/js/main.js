@@ -5,6 +5,7 @@ import '../../../common/css/custom.css'; // shared plain-CSS utilities
 import '../css/main.css'; // activate-account-page-specific styles
 
 import api from '@/common/js/api';
+import { resolveRedirectUrl, currentPageUrl } from '@/common/js/auth';
 import {
   bsToastSuccess as toastSuccess,
   bsToastError as toastError,
@@ -44,10 +45,10 @@ function clearInvalid(input) {
 ready(async () => {
   // ── Already authenticated? Redirect immediately ───────────────────────
   try {
-    const user = await api.post('/auth/me', {}, { silent: true });
+    const user = await api.post('/auth/me', { page_url: currentPageUrl() }, { silent: true });
     if (user && user.role_name) {
       sessionStorage.setItem('user', JSON.stringify(user));
-      window.location.href = '/home-page.html';
+      window.location.href = resolveRedirectUrl(user).url;
       return;
     }
   } catch {

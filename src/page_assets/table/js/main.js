@@ -4,6 +4,7 @@ import '../../../scss/styles.scss'; // Bootstrap + SCSS theme
 import '../../../common/css/custom.css'; // shared plain-CSS utilities
 import '../css/main.css'; // table-specific styles
 import api from '@/common/js/api';
+import { saveRedirectUrl, handleAccessControlRedirect, currentPageUrl } from '@/common/js/auth';
 import { getTableHeaders, fetchTableData, fetchColumnFormats, initTableControls } from './tables';
 import { initTableModals } from './tableModals';
 import { bsToastError } from '../../../common/js/bsToast';
@@ -129,15 +130,18 @@ ready(async () => {
 
   let user;
   try {
-    user = await api.post('/auth/me', {}, { silent: true });
+    user = await api.post('/auth/me', { page_url: currentPageUrl() }, { silent: true });
     if (user && user.role_name) {
       appState.user = user;
       sessionStorage.setItem('user', JSON.stringify(user));
+      if (handleAccessControlRedirect(user)) return;
     } else {
+      saveRedirectUrl();
       window.location.href = '/login.html';
       return;
     }
   } catch {
+    saveRedirectUrl();
     window.location.href = '/login.html';
     return;
   }

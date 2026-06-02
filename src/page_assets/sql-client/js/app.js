@@ -23,7 +23,7 @@
 import api from '../../../common/js/api.js';
 import { bsToastError, bsToastSuccess } from '../../../common/js/bsToast.js';
 import { $, on } from '../../../common/js/dom.js';
-import { initEditor, addTab, getEditorValue, setEditorValue } from './editor.js';
+import { initEditor, addTab, setEditorValue } from './editor.js';
 import {
   initResults,
   renderResultsTable,

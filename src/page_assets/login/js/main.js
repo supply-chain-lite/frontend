@@ -5,6 +5,7 @@ import '../../../common/css/custom.css'; // shared plain-CSS utilities
 import '../css/main.css'; // login-page-specific styles
 
 import api from '@/common/js/api';
+import { resolveRedirectUrl, currentPageUrl } from '@/common/js/auth';
 import {
   bsToastSuccess as toastSuccess,
   bsToastError as toastError,
@@ -44,10 +45,10 @@ function clearInvalid(input) {
 ready(async () => {
   // ── Already authenticated? Redirect immediately ───────────────────────
   try {
-    const user = await api.post('/auth/me', {}, { silent: true });
+    const user = await api.post('/auth/me', { page_url: currentPageUrl() }, { silent: true });
     if (user && user.role_name) {
       sessionStorage.setItem('user', JSON.stringify(user));
-      window.location.href = '/home-page.html';
+      window.location.href = resolveRedirectUrl(user).url;
       return;
     }
   } catch {
@@ -96,12 +97,8 @@ ready(async () => {
     try {
       const data = await api.post('/auth/login', { email, password });
 
-      if (data.user) {
-        sessionStorage.setItem('user', JSON.stringify(data.user));
-      }
-
       await toastSuccess('Signed in successfully');
-      window.location.href = '/home-page.html';
+      window.location.href = resolveRedirectUrl(data).url;
     } catch (err) {
       // api.js already shows an error dialog for network / HTTP errors.
       // Only show a toast for unexpected issues not caught by api.js.

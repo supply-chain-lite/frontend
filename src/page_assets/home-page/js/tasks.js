@@ -82,7 +82,7 @@ function openTaskModal(appState, task) {
 
   // Disabled info fields — not submitted
   modalBody.appendChild(buildDisabledField('Current Project', appState.currentProject));
-  modalBody.appendChild(buildDisabledField('Model Name',     appState.selected_model));
+  modalBody.appendChild(buildDisabledField('Model Name', appState.selected_model));
 
   if (!task.task_params || task.task_params.length === 0) {
     const p = document.createElement('p');
@@ -312,7 +312,10 @@ function collectTaskParams() {
     // FIXED — hidden input with preset value
     const fixedInput = group.querySelector('input[data-param-type="FIXED"]');
     if (fixedInput) {
-      params.push({ ParameterName: fixedInput.dataset.paramName, ParameterValue: fixedInput.value });
+      params.push({
+        ParameterName: fixedInput.dataset.paramName,
+        ParameterValue: fixedInput.value,
+      });
       return;
     }
 
