@@ -170,14 +170,37 @@ function getQueryAtCursor() {
   let start = 0;
   let inString = false;
   let stringChar = '';
+  let inLineComment = false;
+  let inBlockComment = false;
   for (let i = 0; i < fullText.length; i++) {
     const ch = fullText[i];
+    const next = fullText[i + 1];
+
+    if (inLineComment) {
+      if (ch === '\n') inLineComment = false;
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (ch === '*' && next === '/') {
+        inBlockComment = false;
+        i += 1;
+      }
+      continue;
+    }
+
     if (inString) {
       if (ch === stringChar && fullText[i - 1] !== '\\') inString = false;
     } else {
       if (ch === "'" || ch === '"') {
         inString = true;
         stringChar = ch;
+      } else if (ch === '-' && next === '-') {
+        inLineComment = true;
+        i += 1;
+      } else if (ch === '/' && next === '*') {
+        inBlockComment = true;
+        i += 1;
       } else if (ch === ';') {
         stmts.push({ sql: fullText.slice(start, i).trim(), start, end: i });
         start = i + 1;
