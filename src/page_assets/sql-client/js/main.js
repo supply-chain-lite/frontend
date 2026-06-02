@@ -4,6 +4,11 @@ import '../../../scss/styles.scss';
 import '../../../common/css/custom.css';
 import '../css/main.css';
 import api from '../../../common/js/api.js';
+import {
+  saveRedirectUrl,
+  handleAccessControlRedirect,
+  currentPageUrl,
+} from '../../../common/js/auth.js';
 import { bsToastError } from '../../../common/js/bsToast.js';
 import { ready } from '../../../common/js/dom.js';
 import { initApp } from './app.js';
@@ -26,12 +31,16 @@ ready(async () => {
   document.title = `SQL Client - ${projectName} > ${modelName}`;
 
   try {
-    const user = await api.post('/auth/me', {}, { silent: true });
-    if (!user || !user.role_name) {
+    const user = await api.post('/auth/me', { page_url: currentPageUrl() }, { silent: true });
+    if (user && user.role_name) {
+      if (handleAccessControlRedirect(user)) return;
+    } else {
+      saveRedirectUrl();
       window.location.href = '/login.html';
       return;
     }
   } catch {
+    saveRedirectUrl();
     window.location.href = '/login.html';
     return;
   }

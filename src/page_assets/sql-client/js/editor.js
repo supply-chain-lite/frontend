@@ -31,10 +31,6 @@ export function addTab(sql = '') {
   sqlEditorEl.focus();
 }
 
-export function getEditorValue() {
-  return sqlEditorEl.value.trim();
-}
-
 export function setEditorValue(sql) {
   sqlEditorEl.value = sql;
   const cur = editorTabs.find((t) => t.id === activeTabId);

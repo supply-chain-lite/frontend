@@ -80,6 +80,10 @@ function openTaskModal(appState, task) {
   modalLabel.textContent = task.task_name;
   modalBody.innerHTML = '';
 
+  // Disabled info fields — not submitted
+  modalBody.appendChild(buildDisabledField('Current Project', appState.currentProject));
+  modalBody.appendChild(buildDisabledField('Model Name', appState.selected_model));
+
   if (!task.task_params || task.task_params.length === 0) {
     const p = document.createElement('p');
     p.className = 'text-muted mb-0';
@@ -98,6 +102,36 @@ function openTaskModal(appState, task) {
 
   const modal = new window.bootstrap.Modal(modalEl);
   modal.show();
+}
+
+/* ── Build a disabled display-only field (not collected by collectTaskParams) ─ */
+
+function buildDisabledField(labelText, value) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'mb-3 row align-items-center';
+
+  const labelCol = document.createElement('div');
+  labelCol.className = 'col-4';
+
+  const inputCol = document.createElement('div');
+  inputCol.className = 'col-8';
+
+  const label = document.createElement('label');
+  label.className = 'col-form-label';
+  label.textContent = labelText;
+  labelCol.appendChild(label);
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'form-control';
+  input.value = value || '';
+  input.disabled = true;
+  // No data-param-name or data-param-type attributes → skipped by collectTaskParams
+
+  inputCol.appendChild(input);
+  wrapper.appendChild(labelCol);
+  wrapper.appendChild(inputCol);
+  return wrapper;
 }
 
 /* ── Build a form field for a single task parameter ─────────────────────── */
@@ -175,6 +209,17 @@ function buildParameterField(param) {
       input.dataset.paramType = param.ParameterType;
 
       inputCol.appendChild(input);
+      break;
+    }
+
+    case 'FIXED': {
+      wrapper.style.display = 'none';
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.value = param.ParameterValue !== null ? String(param.ParameterValue) : '';
+      hidden.dataset.paramName = param.ParameterName;
+      hidden.dataset.paramType = 'FIXED';
+      inputCol.appendChild(hidden);
       break;
     }
 
@@ -261,6 +306,16 @@ function collectTaskParams() {
     const select = group.querySelector('select[data-param-name]');
     if (select) {
       params.push({ ParameterName: select.dataset.paramName, ParameterValue: select.value });
+      return;
+    }
+
+    // FIXED — hidden input with preset value
+    const fixedInput = group.querySelector('input[data-param-type="FIXED"]');
+    if (fixedInput) {
+      params.push({
+        ParameterName: fixedInput.dataset.paramName,
+        ParameterValue: fixedInput.value,
+      });
       return;
     }
 

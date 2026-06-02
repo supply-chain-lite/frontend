@@ -5,6 +5,7 @@ import '../../../common/css/custom.css'; // shared plain-CSS utilities
 import '../css/main.css'; // task-details-specific styles
 
 import api from '@/common/js/api';
+import { saveRedirectUrl, handleAccessControlRedirect, currentPageUrl } from '@/common/js/auth';
 import { $, on, ready } from '@/common/js/dom';
 import { bsToastSuccess, bsToastError } from '@/common/js/bsToast';
 
@@ -193,14 +194,17 @@ ready(async () => {
 
   // Auth guard
   try {
-    const user = await api.post('/auth/me', {}, { silent: true });
+    const user = await api.post('/auth/me', { page_url: currentPageUrl() }, { silent: true });
     if (user && user.email) {
       currentUser = user.email;
+      if (handleAccessControlRedirect(user)) return;
     } else {
+      saveRedirectUrl();
       window.location.href = '/login.html';
       return;
     }
   } catch {
+    saveRedirectUrl();
     window.location.href = '/login.html';
     return;
   }
