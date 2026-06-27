@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -32,7 +32,7 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
       - name: Deploy to VPS
-        uses: burnett01/rsync-deployments@8.0.5
+        uses: burnett01/rsync-deployments@9.0.0
         with:
           switches: -avz --delete
           path: dist/
