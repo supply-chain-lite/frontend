@@ -349,12 +349,27 @@ async function submitTask(appState, task, submitBtn) {
     '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting…';
 
   try {
-    await api.post('/tasks/run', {
+    const data = await api.post('/tasks/run', {
       project_name: appState.currentProject,
       model_name: appState.selected_model,
       task_id: task.task_id,
       task_params: taskParams,
     });
+
+    if (data.task_name !== task.task_name) {
+      bsToastError(
+        `Task name mismatch: expected "${task.task_name}", got "${data.task_name}". Please check the server logs.`
+      );
+      return;
+    }
+
+    if (!trackedRunningTasks.has(data.task_id)) {
+        trackedRunningTasks.set(data.task_id, {
+          task_name: task.task_name,
+          model_name: appState.selected_model,
+          project_name: appState.currentProject,
+        });
+    }
 
     updateRunningTaskUI(appState);
 
@@ -432,7 +447,6 @@ async function updateRunningTaskUI(appState) {
 
 async function checkCompletedTaskStatus(taskId, taskInfo) {
   try {
-    initNotifications(); // Refresh notifications to get any updates related to the completed task
     const data = await api.post('/tasks/status', {
       task_id: taskId,
     });
@@ -460,6 +474,7 @@ async function checkCompletedTaskStatus(taskId, taskInfo) {
   } catch {
     // Silently fail - task status check is best effort
   }
+  initNotifications(); // Refresh notifications to get any updates related to the completed task
 }
 
 function createRunningTaskCard(task) {
