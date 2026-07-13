@@ -364,11 +364,11 @@ async function submitTask(appState, task, submitBtn) {
     }
 
     if (!trackedRunningTasks.has(data.task_id)) {
-        trackedRunningTasks.set(data.task_id, {
-          task_name: task.task_name,
-          model_name: appState.selected_model,
-          project_name: appState.currentProject,
-        });
+      trackedRunningTasks.set(data.task_id, {
+        task_name: task.task_name,
+        model_name: appState.selected_model,
+        project_name: appState.currentProject,
+      });
     }
 
     updateRunningTaskUI(appState);
