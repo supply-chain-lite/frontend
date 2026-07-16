@@ -26,10 +26,10 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.6.0",
-    "prettier": "^3.9.4",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.5",
     "sass": "^1.101.0",
-    "vite": "^8.1.3"
+    "vite": "^8.1.4"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.0",
