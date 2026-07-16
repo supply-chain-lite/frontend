@@ -352,7 +352,7 @@ async function submitTask(appState, task, submitBtn) {
     const data = await api.post('/tasks/run', {
       project_name: appState.currentProject,
       model_name: appState.selected_model,
-      task_id: task.task_id,
+      task_code: task.task_code,
       task_params: taskParams,
     });
 
