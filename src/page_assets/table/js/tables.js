@@ -16,22 +16,10 @@ import {
   bindDropdownItemToggle,
   getDateColumnsInTextFilters,
   getNumericFiltersInTextFilters,
+  prettyIfJson,
 } from './commons';
 
 let tableLoaderDepth = 0;
-
-/** Return a pretty-printed JSON string if `str` is valid JSON, otherwise return `str` as-is. */
-function prettyIfJson(str) {
-  const trimmed = str.trim();
-  if (trimmed.length > 0 && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
-    try {
-      return JSON.stringify(JSON.parse(trimmed), null, 2);
-    } catch {
-      // not valid JSON — fall through
-    }
-  }
-  return str;
-}
 
 /** CSS class applied to the row currently being edited. */
 const EDITING_CLASS = 'scl-row-editing';
