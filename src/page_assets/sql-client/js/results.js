@@ -47,10 +47,12 @@ export function renderResultsTable(columns, rows) {
       (row) =>
         '<tr>' +
         row
-          .map(
-            (cell) =>
-              `<td>${cell === null ? '<i class="text-muted">NULL</i>' : esc(String(cell))}</td>`
-          )
+          .map((cell) => {
+            if (cell === null) return '<td><i class="text-muted">NULL</i></td>';
+            const raw = String(cell);
+            const title = escAttr(prettyIfJson(raw));
+            return `<td title="${title}">${esc(raw)}</td>`;
+          })
           .join('') +
         '</tr>'
     )
@@ -144,8 +146,25 @@ export async function copyToClipboard(text) {
   }
 }
 
+function prettyIfJson(str) {
+  const trimmed = str.trim();
+  if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.length > 0) {
+    try {
+      return JSON.stringify(JSON.parse(trimmed), null, 2);
+    } catch {
+      // not valid JSON — return as-is
+    }
+  }
+  return str;
+}
+
 function esc(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+/** Like esc() but also encodes double quotes for use inside attribute values. */
+function escAttr(str) {
+  return esc(str).replace(/"/g, '&quot;');
 }

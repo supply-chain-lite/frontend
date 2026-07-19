@@ -306,6 +306,29 @@ function formatCellValue(val, dataType, fmt) {
   return { text: String(val), align: '' };
 }
 
+// ── JSON pretty-print ──────────────────────────────────────────────────────
+
+/**
+ * Return a pretty-printed JSON string if `str` is valid JSON, otherwise return `str` as-is.
+ *
+ * Only attempts to parse strings that begin with `{` or `[` to avoid the cost of
+ * trying to parse every cell value.
+ *
+ * @param {string} str - The string to test and format.
+ * @returns {string} Pretty-printed JSON (2-space indent) or the original string.
+ */
+function prettyIfJson(str) {
+  const trimmed = str.trim();
+  if (trimmed.length > 0 && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
+    try {
+      return JSON.stringify(JSON.parse(trimmed), null, 2);
+    } catch {
+      // not valid JSON — fall through
+    }
+  }
+  return str;
+}
+
 // ── Misc generic utilities ──────────────────────────────────────────────────
 
 /**
@@ -479,6 +502,8 @@ export {
   resolveCurrencySymbol,
   formatNumericValue,
   formatCellValue,
+  // JSON pretty-print
+  prettyIfJson,
   // Misc utilities
   areArraysEqual,
   sanitizeCellForClipboard,

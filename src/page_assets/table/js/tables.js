@@ -16,6 +16,7 @@ import {
   bindDropdownItemToggle,
   getDateColumnsInTextFilters,
   getNumericFiltersInTextFilters,
+  prettyIfJson,
 } from './commons';
 
 let tableLoaderDepth = 0;
@@ -483,7 +484,9 @@ async function fetchTableData(appState) {
         const [colName, dataType] = appState.columnNames[i] ?? [];
         const fmt = appState.columnFormats?.[colName];
         const { text, align } = formatCellValue(val, dataType, fmt);
-        td.title = val ?? '';
+        const rawStr = val !== null && val !== undefined ? String(val) : '';
+        td.dataset.rawValue = rawStr;
+        td.title = prettyIfJson(rawStr);
         td.textContent = text;
         if (align) td.style.textAlign = align;
         tr.appendChild(td);
@@ -1076,8 +1079,9 @@ function initDecimalBtns(appState) {
         for (const row of tbody.rows) {
           const td = row.cells[colIndex + 1]; // +1 for leading checkbox column
           if (!td) continue;
-          if (td.title === '' && td.textContent === '') continue;
-          const { text, align } = formatCellValue(td.title, dataType, format);
+          const tdRaw = td.dataset.rawValue ?? td.title;
+          if (tdRaw === '' && td.textContent === '') continue;
+          const { text, align } = formatCellValue(tdRaw, dataType, format);
           td.textContent = text;
           td.style.textAlign = align || '';
         }
@@ -1191,9 +1195,10 @@ function startEditing(tr, appState) {
 
   for (let i = 1; i < cells.length; i++) {
     const td = cells[i];
+    const tdRaw = td.dataset.rawValue ?? td.title;
     originals.push({
       cellIndex: i,
-      rawValue: td.title,
+      rawValue: tdRaw,
       displayText: td.textContent,
       align: td.style.textAlign,
     });
@@ -1221,46 +1226,46 @@ function startEditing(tr, appState) {
         el.appendChild(option);
       }
 
-      if (td.title && !fmt.lov_options.includes(td.title)) {
+      if (tdRaw && !fmt.lov_options.includes(tdRaw)) {
         const option = document.createElement('option');
-        option.value = td.title;
-        option.textContent = td.title;
+        option.value = tdRaw;
+        option.textContent = tdRaw;
         el.appendChild(option);
       }
 
-      el.value = td.title;
+      el.value = tdRaw;
     } else if (isDateOnNumeric) {
       el = document.createElement('input');
       el.type = 'date';
       el.className = 'form-control form-control-sm scl-inline-edit';
       el.dataset.excelSerial = 'true';
-      const num = Number(td.title);
-      el.value = td.title !== '' && !Number.isNaN(num) ? excelSerialToDate(num) : '';
+      const num = Number(tdRaw);
+      el.value = tdRaw !== '' && !Number.isNaN(num) ? excelSerialToDate(num) : '';
     } else if (isDatetimeOnNumeric) {
       el = document.createElement('input');
       el.type = 'datetime-local';
       el.step = '1';
       el.className = 'form-control form-control-sm scl-inline-edit';
       el.dataset.excelSerial = 'true';
-      const num = Number(td.title);
+      const num = Number(tdRaw);
       el.value =
-        td.title !== '' && !Number.isNaN(num) ? excelSerialToDatetime(num).replace(' ', 'T') : '';
+        tdRaw !== '' && !Number.isNaN(num) ? excelSerialToDatetime(num).replace(' ', 'T') : '';
     } else if (isDateOnText) {
       el = document.createElement('input');
       el.type = 'date';
       el.className = 'form-control form-control-sm scl-inline-edit';
-      el.value = td.title ? td.title.substring(0, 10) : '';
+      el.value = tdRaw ? tdRaw.substring(0, 10) : '';
     } else if (isDatetimeOnText) {
       el = document.createElement('input');
       el.type = 'datetime-local';
       el.step = '1';
       el.className = 'form-control form-control-sm scl-inline-edit';
-      el.value = td.title ? td.title.substring(0, 19).replace(' ', 'T') : '';
+      el.value = tdRaw ? tdRaw.substring(0, 19).replace(' ', 'T') : '';
     } else {
       el = document.createElement('input');
       el.type = 'text';
       el.className = 'form-control form-control-sm scl-inline-edit';
-      el.value = td.title;
+      el.value = tdRaw;
       if (td.style.textAlign) el.style.textAlign = td.style.textAlign;
     }
 
@@ -1381,7 +1386,9 @@ async function saveEditing(appState) {
       const [colName, dataType] = appState.columnNames[colIndex] ?? [];
       const fmt = appState.columnFormats?.[colName];
 
-      td.title = newValue ?? '';
+      const rawStr = newValue ?? '';
+      td.dataset.rawValue = rawStr;
+      td.title = prettyIfJson(rawStr);
       const { text, align } = formatCellValue(newValue, dataType, fmt);
       td.textContent = text;
       td.style.textAlign = align || '';
