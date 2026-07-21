@@ -38,6 +38,6 @@ jobs:
           path: dist/
           remote_path: ${{ secrets.VPS_DEPLOY_PATH }}
           remote_host: ${{ secrets.ORG_VPS_HOST }}
-          remote_user: ${{ secrets.VPS_USER }}
+          remote_user: ${{ secrets.ORG_USER }}
           remote_key: ${{ secrets.ORG_SSH_KEY }}
           remote_port: ${{ secrets.VPS_PORT || 22 }}
