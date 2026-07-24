@@ -87,8 +87,26 @@
                 </div>
               </div>
             </div>
+
+            <!-- Success action buttons -->
+            <div id="taskSuccessActions" class="d-none mt-3 d-flex align-items-center gap-2">
+              <button class="btn btn-outline-primary btn-sm" id="restoreDbBtn">
+                <i class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></i>
+                Restore Database
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" id="compareDbBtn">
+                <i class="fa-solid fa-code-compare me-1" aria-hidden="true"></i>
+                Compare Database
+              </button>
+            </div>
           </div>
         </div>
+
+        <!-- Database diff section (rendered after Compare Database is clicked) -->
+        <div id="dbDiffSection" class="d-none flex-shrink-0"></div>
+
+        <!-- Input / Output section (rendered dynamically when non-empty JSON is returned) -->
+        <div id="taskIOSection" class="d-none flex-shrink-0"></div>
 
         <!-- Log section -->
         <div class="card flex-fill d-flex flex-column overflow-hidden">
@@ -114,6 +132,61 @@
         </div>
       </div>
     </main>
+
+    <!-- Restore Database confirmation modal -->
+    <div
+      class="modal fade"
+      id="restoreDbModal"
+      tabindex="-1"
+      aria-labelledby="restoreDbModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="restoreDbModalLabel">
+              <i class="fa-solid fa-clock-rotate-left me-2" aria-hidden="true"></i>
+              Restore Database
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <div class="text-muted small">Project Name</div>
+                <div class="fw-semibold" id="restoreDbProjectName">-</div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small">Model Name</div>
+                <div class="fw-semibold" id="restoreDbModelName">-</div>
+              </div>
+            </div>
+            <div class="alert alert-warning mb-0" role="alert">
+              <i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>
+              <strong>Warning:</strong>
+              This will restore the database to its state at the time of this task. All changes made
+              to the existing database after this point will be permanently undone and
+              <strong>cannot be recovered</strong>
+              .
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-danger ms-auto" id="restoreDbConfirmBtn">
+              <i class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></i>
+              Restore
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="page_assets/task-details/js/main.js"></script>
   </body>
