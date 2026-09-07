@@ -10,7 +10,11 @@ export function initDirectory({ listId, searchId, paginationId, icon, label, onS
 
   function visibleRecords() {
     const term = search?.value.trim().toLowerCase() || '';
-    return records.filter((record) => String(label(record) ?? '').toLowerCase().includes(term));
+    return records.filter((record) =>
+      String(label(record) ?? '')
+        .toLowerCase()
+        .includes(term)
+    );
   }
 
   function render() {
