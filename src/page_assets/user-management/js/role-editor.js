@@ -136,19 +136,21 @@ export function initRoleEditor(state, refreshData) {
     }
     const endpoint = selectedRole ? 'update-role' : 'add-role';
     if (selectedRole) payload.RoleId = selectedRole.RoleId;
+    const selectedRoleId = selectedRole?.RoleId;
     const response = await api.post(`/user-management/${endpoint}`, payload);
     bsToastSuccess(response.message);
     await refreshData();
 
-    const savedRole = selectedRole
-      ? selectedRole
-      : state.roles.find(
-          (role) => role.RoleName?.toLowerCase() === payload.RoleName.toLowerCase()
-        ) || {
-          ...payload,
-          RoleId: response.RoleId || null,
-          CanAddNewModel: Number(payload.CanAddNewModel),
-        };
+    const savedRole = state.roles.find((role) =>
+      selectedRoleId
+        ? role.RoleId === selectedRoleId
+        : role.RoleName?.toLowerCase() === payload.RoleName.toLowerCase()
+    ) || {
+      ...payload,
+      RoleId: response.RoleId || null,
+      CanAddNewModel: Number(payload.CanAddNewModel),
+    };
+    selectedRole = savedRole;
 
     markSaved();
     return savedRole;

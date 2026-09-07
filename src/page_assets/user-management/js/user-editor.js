@@ -164,27 +164,29 @@ export function initUserEditor(state, refreshData) {
       return false;
     }
     const endpoint = selectedUser ? 'update-user' : 'add-user';
+    const selectedUserEmail = selectedUser?.UserEmail;
+    const isNewUser = !selectedUser;
     const response = await api.post(`/user-management/${endpoint}`, payload);
     bsToastSuccess(response.message);
     await refreshData();
 
-    const savedUser = selectedUser
-      ? selectedUser
-      : state.userDetails.find(
-          (user) => user.UserEmail?.toLowerCase() === payload.UserEmail.toLowerCase()
-        ) || {
-          ...payload,
-          IsActive: Number(active.checked),
-        };
+    const savedUser = state.userDetails.find(
+      (user) =>
+        user.UserEmail?.toLowerCase() === (selectedUserEmail || payload.UserEmail).toLowerCase()
+    ) || {
+      ...payload,
+      IsActive: Number(active.checked),
+    };
 
     if (
-      !selectedUser &&
+      isNewUser &&
       !state.userDetails.some(
         (user) => user.UserEmail?.toLowerCase() === payload.UserEmail.toLowerCase()
       )
     ) {
       state.userDetails.unshift(savedUser);
     }
+    selectedUser = savedUser;
 
     markSaved();
     return savedUser;
