@@ -3,6 +3,10 @@ window.bootstrap = bootstrap;
 import '../../../scss/styles.scss';
 import '../../../common/css/custom.css';
 import '../css/main.css';
+import api from '@/common/js/api';
+import { saveRedirectUrl, handleAccessControlRedirect, currentPageUrl } from '@/common/js/auth';
+import { ready } from '@/common/js/dom';
+import { initUserManagement } from './user-management';
 
 function autosizeUserListBody() {
   const userListContainer = document.getElementById('userListContainer');
@@ -48,7 +52,39 @@ function autosizeActiveTabBody() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+ready(async () => {
+  try {
+    const user = await api.post('/auth/me', { page_url: currentPageUrl() }, { silent: true });
+    if (!user?.role_name) throw new Error('Authentication required');
+    if (handleAccessControlRedirect(user)) return;
+
+    sessionStorage.setItem('user', JSON.stringify(user));
+    const initials = user.display_name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase();
+    document.getElementById('displayAvatar').textContent = initials || '?';
+  } catch {
+    saveRedirectUrl();
+    window.location.href = '/login.html';
+    return;
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', async (event) => {
+    event.preventDefault();
+    try {
+      await api.post('/auth/logout', {});
+      sessionStorage.removeItem('user');
+      window.location.href = '/login.html';
+    } catch {
+      // The shared API client displays the error toast.
+    }
+  });
+
+  await initUserManagement();
   autosizeUserListBody();
   window.addEventListener('resize', autosizeActiveTabBody);
 

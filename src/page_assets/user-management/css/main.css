@@ -164,6 +164,10 @@
   width: 3rem;
 }
 
+.user-switch .form-check-input:not(:checked) {
+  background-color: var(--bs-body-bg);
+}
+
 .user-switch .form-check-label {
   color: var(--bs-heading-color);
   font-weight: 600;
@@ -246,6 +250,20 @@
 .template-list {
   max-height: 180px;
   overflow-y: auto;
+}
+
+#roleDetailTabsContent,
+#role-permissions-pane.active {
+  height: 100%;
+}
+
+#role-permissions-pane.active {
+  display: flex;
+}
+
+#roleModules {
+  flex: 1 1 auto;
+  max-height: none;
 }
 
 .permission-matrix {

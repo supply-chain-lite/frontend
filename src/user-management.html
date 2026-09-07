@@ -7,19 +7,12 @@
     <link rel="icon" type="image/svg+xml" href="scc.svg" />
   </head>
   <body class="min-vh-100 d-flex flex-column">
-    <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-2">
       <div class="container-fluid align-items-center">
-        <!-- Branding -->
-
         <div class="d-flex align-items-center">
-          <div class="flex-shrink-0 d-flex align-items-center">
-            <img src="/summence_bw.png" alt="" width="36" height="36" />
-            <h1 class="fs-5 fw-bold text-dark ms-3 mb-0">SupplyChainLite</h1>
-          </div>
+          <img src="/summence_bw.png" alt="" width="36" height="36" />
+          <h1 class="fs-5 fw-bold text-dark ms-3 mb-0">SupplyChainLite</h1>
         </div>
-
-        <!-- Mobile Toggle Button -->
         <button
           class="navbar-toggler"
           type="button"
@@ -31,8 +24,6 @@
         >
           <span class="navbar-toggler-icon"></span>
         </button>
-
-        <!-- Navigation Items -->
         <div class="collapse navbar-collapse align-items-center ms-lg-5" id="navbarNav">
           <ul class="nav nav-tabs mb-0" id="managementTabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -65,24 +56,19 @@
             </li>
           </ul>
         </div>
-
-        <!-- User Profile (Right Side) -->
         <div class="navbar-actions d-flex align-items-center">
-          <div class="dropdown">
-            <a
-              class="nav-link text-dark d-flex align-items-center p-0"
-              href="home-page.html"
-              role="button"
-              aria-expanded="false"
+          <a
+            class="nav-link text-dark d-flex align-items-center p-0"
+            href="home-page.html"
+            aria-label="Home"
+          >
+            <span
+              class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+              style="width: 40px; height: 40px"
             >
-              <div
-                class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center me-2"
-                style="width: 40px; height: 40px; font-weight: bold; position: relative"
-              >
-                <i class="fa-solid fa-home" aria-label="Home" aria-hidden="true"></i>
-              </div>
-            </a>
-          </div>
+              <i class="fa-solid fa-home" aria-label="Home" aria-hidden="true"></i>
+            </span>
+          </a>
           <div class="dropdown">
             <a
               class="nav-link text-dark d-flex align-items-center p-0"
@@ -93,19 +79,15 @@
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              <div
+              <span
                 id="displayAvatar"
                 class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center me-2"
-                style="width: 40px; height: 40px; font-weight: bold"
+                style="width: 40px; height: 40px"
               >
-                JD
-              </div>
+                ?
+              </span>
             </a>
-            <ul
-              class="dropdown-menu dropdown-menu-end"
-              id="userInfoActions"
-              aria-labelledby="userDropdown"
-            >
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
               <li><a class="dropdown-item" href="#" id="logoutBtn">Logout</a></li>
             </ul>
           </div>
@@ -113,7 +95,6 @@
       </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="container-fluid flex-fill d-flex py-4 user-management-page">
       <div class="tab-content d-flex flex-column flex-fill" id="managementTabContent">
         <div
@@ -122,11 +103,11 @@
           role="tabpanel"
           aria-labelledby="users-tab"
         >
-          <div class="col-md-3 mb-3 mb-md-0" id="userListContainer">
+          <aside class="col-md-3 mb-3 mb-md-0" id="userListContainer">
             <div class="card h-100">
               <div class="card-body" id="userListBody" style="overflow-y: auto">
-                <h4 class="card-title text-center mb-3">Users</h4>
-                <div class="input-group mb-3" id="userSearchGroup">
+                <h2 class="card-title h4 text-center mb-3">Users</h2>
+                <div class="input-group mb-3">
                   <input
                     type="search"
                     class="form-control"
@@ -136,29 +117,11 @@
                   />
                   <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
                 </div>
-                <div class="list-group" id="userList">
-                  <a href="#" class="list-group-item list-group-item-action ps-1">
-                    <i class="fa-solid fa-user"></i>
-                    another.user@bhalte.com
-                  </a>
-                  <a href="#" class="list-group-item list-group-item-action ps-1">
-                    <i class="fa-solid fa-user"></i>
-                    uske.papa@google.com
-                  </a>
-                </div>
+                <div class="list-group" id="userList"></div>
               </div>
-              <div class="card-footer text-left py-2 px-2" id="paginationButtons">
-                <div class="btn-group w-100" role="group" aria-label="User list pagination">
-                  <button type="button" class="btn btn-outline-secondary">Previous</button>
-                  <button type="button" class="btn btn-dark">1</button>
-                  <button type="button" class="btn btn-outline-secondary">2</button>
-                  <button type="button" class="btn btn-outline-secondary">3</button>
-                  <button type="button" class="btn btn-outline-secondary">4</button>
-                  <button type="button" class="btn btn-outline-secondary">Next</button>
-                </div>
-              </div>
+              <div class="card-footer text-left py-2 px-2" id="paginationButtons"></div>
             </div>
-          </div>
+          </aside>
           <div class="col-md-9 mb-md-0 mb-3" id="userDetailsContainer">
             <div class="card h-100">
               <div class="card-body" id="userDetailsBody">
@@ -169,34 +132,20 @@
                       id="user-details-pane"
                       role="tabpanel"
                       aria-labelledby="user-details-tab"
-                      tabindex="0"
                     >
-                      <form>
+                      <form id="userDetailsForm">
                         <div class="user-detail-grid">
                           <label class="form-label" for="selectedUserEmail">Email</label>
                           <input
                             class="form-control"
                             id="selectedUserEmail"
                             type="email"
-                            value="another.user@bhalte.com"
+                            required
                           />
-
                           <label class="form-label" for="selectedUserRole">Permission Level</label>
-                          <select class="form-select" id="selectedUserRole">
-                            <option selected>Admin</option>
-                            <option>Planner</option>
-                            <option>Analyst</option>
-                            <option>Viewer</option>
-                          </select>
-
-                          <label class="form-label" for="selectedFirstName">First Name</label>
-                          <input
-                            class="form-control"
-                            id="selectedFirstName"
-                            type="text"
-                            value="Another"
-                          />
-
+                          <select class="form-select" id="selectedUserRole" required></select>
+                          <label class="form-label" for="selectedFirstName">Display Name</label>
+                          <input class="form-control" id="selectedFirstName" type="text" required />
                           <span class="form-label">Status</span>
                           <div class="form-check form-switch user-switch">
                             <input
@@ -204,155 +153,42 @@
                               type="checkbox"
                               role="switch"
                               id="selectedUserStatus"
-                              checked
                             />
-                            <label class="form-check-label" for="selectedUserStatus">Active</label>
-                          </div>
-
-                          <span class="form-label">Worksheet Access</span>
-                          <div class="form-check form-switch user-switch">
-                            <input
-                              class="form-check-input"
-                              type="checkbox"
-                              role="switch"
-                              id="worksheetAccess"
-                              checked
-                            />
-                            <label class="form-check-label" for="worksheetAccess">
-                              Read &amp; Write
+                            <label class="form-check-label" for="selectedUserStatus">
+                              Inactive
                             </label>
                           </div>
+                          <label class="form-label" for="accessExpiry">Access Expiry</label>
+                          <input class="form-control" id="accessExpiry" type="date" required />
                         </div>
                       </form>
                     </section>
-
-                    <section
-                      class="tab-pane fade pt-0 mb-0 me-5"
-                      id="level-access-pane"
-                      role="tabpanel"
-                      aria-labelledby="level-access-tab"
-                      tabindex="0"
-                    >
-                      <div class="row g-3">
-                        <div class="col-md-6">
-                          <label class="form-label" for="accessExpiry">Access Expiry</label>
-                          <input
-                            class="form-control"
-                            id="accessExpiry"
-                            type="date"
-                            value="2026-12-31"
-                          />
-                        </div>
-                        <div class="col-md-6">
-                          <label class="form-label" for="selectedRegion">Region Access</label>
-                          <select class="form-select" id="selectedRegion">
-                            <option selected>All regions</option>
-                            <option>North America</option>
-                            <option>APAC</option>
-                            <option>Europe</option>
-                          </select>
-                        </div>
-                        <div class="col-12">
-                          <label class="form-label" for="accessConstraints">User Constraints</label>
-                          <textarea class="form-control" id="accessConstraints" rows="4">
-Full access to models, roles, templates, and admin modules.</textarea>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section
-                      class="tab-pane fade pt-0 mb-0 me-5"
-                      id="user-groups-pane"
-                      role="tabpanel"
-                      aria-labelledby="user-groups-tab2"
-                      tabindex="0"
-                    >
-                      <div class="row g-3">
-                        <div class="col-sm-6">
-                          <div class="form-check border rounded p-3 ps-5">
-                            <input
-                              class="form-check-input"
-                              type="checkbox"
-                              id="groupAdmins"
-                              checked
-                            />
-                            <label class="form-check-label fw-semibold" for="groupAdmins">
-                              Administrators
-                            </label>
-                          </div>
-                        </div>
-                        <div class="col-sm-6">
-                          <div class="form-check border rounded p-3 ps-5">
-                            <input
-                              class="form-check-input"
-                              type="checkbox"
-                              id="groupPlanning"
-                              checked
-                            />
-                            <label class="form-check-label fw-semibold" for="groupPlanning">
-                              Planning Leads
-                            </label>
-                          </div>
-                        </div>
-                        <div class="col-sm-6">
-                          <div class="form-check border rounded p-3 ps-5">
-                            <input class="form-check-input" type="checkbox" id="groupReview" />
-                            <label class="form-check-label fw-semibold" for="groupReview">
-                              Executive Review
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-
                     <section
                       class="tab-pane fade pt-0 mb-0 me-5"
                       id="user-modules-pane"
                       role="tabpanel"
                       aria-labelledby="user-modules-tab2"
-                      tabindex="0"
                     >
-                      <div class="template-list border rounded p-3">
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="templateDemand"
-                            checked
-                          />
-                          <label class="form-check-label" for="templateDemand">
-                            Demand Planning
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="templateNetwork"
-                            checked
-                          />
-                          <label class="form-check-label" for="templateNetwork">
-                            Network Design
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input class="form-check-input" type="checkbox" id="templateInventory" />
-                          <label class="form-check-label" for="templateInventory">
-                            Inventory Policy
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input class="form-check-input" type="checkbox" id="templateReview" />
-                          <label class="form-check-label" for="templateReview">
-                            Executive Review
-                          </label>
-                        </div>
+                      <div class="user-detail-grid">
+                        <span class="form-label">Templates</span>
+                        <div class="template-list border rounded p-3" id="userTemplates"></div>
+                        <label class="form-label" for="maxConcurrentRuns">
+                          Maximum Concurrent Runs
+                        </label>
+                        <input
+                          class="form-control"
+                          id="maxConcurrentRuns"
+                          form="userDetailsForm"
+                          type="number"
+                          min="1"
+                          step="1"
+                          required
+                        />
                       </div>
                     </section>
                   </div>
                   <ul
                     class="nav flex-column user-detail-tabs"
-                    id="userDetailTabs"
                     role="tablist"
                     aria-orientation="vertical"
                   >
@@ -373,34 +209,6 @@ Full access to models, roles, templates, and admin modules.</textarea>
                     <li class="nav-item" role="presentation">
                       <button
                         class="nav-link"
-                        id="level-access-tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#level-access-pane"
-                        type="button"
-                        role="tab"
-                        aria-controls="level-access-pane"
-                        aria-selected="false"
-                      >
-                        Level Access
-                      </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button
-                        class="nav-link"
-                        id="user-groups-tab2"
-                        data-bs-toggle="tab"
-                        data-bs-target="#user-groups-pane"
-                        type="button"
-                        role="tab"
-                        aria-controls="user-groups-pane"
-                        aria-selected="false"
-                      >
-                        User Groups
-                      </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button
-                        class="nav-link"
                         id="user-modules-tab2"
                         data-bs-toggle="tab"
                         data-bs-target="#user-modules-pane"
@@ -409,7 +217,7 @@ Full access to models, roles, templates, and admin modules.</textarea>
                         aria-controls="user-modules-pane"
                         aria-selected="false"
                       >
-                        User Modules
+                        Templates
                       </button>
                     </li>
                   </ul>
@@ -417,67 +225,56 @@ Full access to models, roles, templates, and admin modules.</textarea>
               </div>
               <div class="card-footer d-flex justify-content-end py-2 px-2" id="useractionButtons">
                 <div class="btn-group w-30" role="group" aria-label="User action buttons">
-                  <button type="button" class="btn btn-outline-secondary">
+                  <button type="button" class="btn btn-outline-secondary" id="addUserButton">
                     <i class="fa-solid fa-plus me-1"></i>
                     Add New
                   </button>
-                  <button type="button" class="btn btn-outline-secondary">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                  <button type="button" class="btn btn-dark" id="userPreviousButton" hidden>
+                    <i class="fa-solid fa-arrow-left me-1"></i>
+                    Previous
+                  </button>
+                  <button type="button" class="btn btn-dark" id="userNextButton">
+                    Next
+                    <i class="fa-solid fa-arrow-right ms-1"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    id="saveAsUserButton"
+                    hidden
+                  >
+                    <i class="fa-solid fa-copy me-1"></i>
                     Save As
                   </button>
-                  <button type="button" class="btn btn-outline-secondary">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    id="saveUserButton"
+                    hidden
+                  >
                     <i class="fa-solid fa-check me-1"></i>
                     Save
-                  </button>
-                  <button type="button" class="btn btn-danger">
-                    <i class="fa-solid fa-trash-can me-1"></i>
-                    Delete
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
         <div
           id="roles-pane"
           class="tab-pane fade row flex-fill mx-0"
           role="tabpanel"
           aria-labelledby="roles-tab"
-          tabindex="0"
         >
-          <div class="col-md-3 mb-3 mb-md-0" id="roleListContainer">
+          <aside class="col-md-3 mb-3 mb-md-0" id="roleListContainer">
             <div class="card h-100">
               <div class="card-body" id="roleListBody" style="overflow-y: auto">
-                <h4 class="card-title text-center mb-3">Roles</h4>
-                <div class="list-group" id="roleList">
-                  <a href="#" class="list-group-item list-group-item-action ps-1 active">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    Administrator
-                  </a>
-                  <a href="#" class="list-group-item list-group-item-action ps-1">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    Planner
-                  </a>
-                  <a href="#" class="list-group-item list-group-item-action ps-1">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    Analyst
-                  </a>
-                  <a href="#" class="list-group-item list-group-item-action ps-1">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    Viewer
-                  </a>
-                  <a href="#" class="list-group-item list-group-item-action ps-1">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    Executive Review
-                  </a>
-                  <a href="#" class="list-group-item list-group-item-action ps-1">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    Planning Lead
-                  </a>
-                </div>
+                <h2 class="card-title h4 text-center mb-3">Roles</h2>
+                <div class="list-group" id="roleList"></div>
               </div>
             </div>
-          </div>
+          </aside>
           <div class="col-md-9 mb-md-0 mb-3" id="roleDetailsContainer">
             <div class="card h-100">
               <div class="card-body" id="roleDetailsBody">
@@ -488,152 +285,54 @@ Full access to models, roles, templates, and admin modules.</textarea>
                       id="role-details-pane"
                       role="tabpanel"
                       aria-labelledby="role-details-tab"
-                      tabindex="0"
                     >
-                      <form>
+                      <form id="roleDetailsForm">
                         <div class="user-detail-grid">
                           <label class="form-label" for="selectedRoleName">Role Name</label>
-                          <input
-                            class="form-control"
-                            id="selectedRoleName"
-                            type="text"
-                            value="Administrator"
-                          />
-
+                          <input class="form-control" id="selectedRoleName" type="text" required />
                           <label class="form-label" for="selectedRoleDescription">
                             Description
                           </label>
-                          <textarea class="form-control" id="selectedRoleDescription" rows="4">
-Full access to user management, roles, models, and system configuration.</textarea>
-
-                          <span class="form-label">Status</span>
-                          <div class="form-check form-switch user-switch">
-                            <input
-                              class="form-check-input"
-                              type="checkbox"
-                              role="switch"
-                              id="selectedRoleStatus"
-                              checked
-                            />
-                            <label class="form-check-label" for="selectedRoleStatus">Active</label>
-                          </div>
-
-                          <span class="form-label">Admin Role</span>
+                          <textarea
+                            class="form-control"
+                            id="selectedRoleDescription"
+                            rows="4"
+                            required
+                          ></textarea>
+                          <span class="form-label">Can Add New Model</span>
                           <div class="form-check form-switch user-switch">
                             <input
                               class="form-check-input"
                               type="checkbox"
                               role="switch"
                               id="adminRoleFlag"
-                              checked
                             />
-                            <label class="form-check-label" for="adminRoleFlag">Yes</label>
+                            <label class="form-check-label" for="adminRoleFlag">No</label>
                           </div>
+                          <label class="form-label" for="selectedRoleHomePage">Home Page</label>
+                          <select class="form-select" id="selectedRoleHomePage" required></select>
                         </div>
                       </form>
                     </section>
-
                     <section
                       class="tab-pane fade pt-0 mb-0 me-5"
                       id="role-permissions-pane"
                       role="tabpanel"
                       aria-labelledby="role-permissions-tab"
-                      tabindex="0"
                     >
-                      <div class="template-list border rounded p-3">
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="permUserManage"
-                            checked
-                          />
-                          <label class="form-check-label" for="permUserManage">
-                            User Management
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="permRoleManage"
-                            checked
-                          />
-                          <label class="form-check-label" for="permRoleManage">
-                            Role Management
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="permDemandPlanning"
-                            checked
-                          />
-                          <label class="form-check-label" for="permDemandPlanning">
-                            Demand Planning
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="permNetworkDesign"
-                            checked
-                          />
-                          <label class="form-check-label" for="permNetworkDesign">
-                            Network Design
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="permInventoryPolicy"
-                          />
-                          <label class="form-check-label" for="permInventoryPolicy">
-                            Inventory Policy
-                          </label>
-                        </div>
-                        <div class="form-check">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="permExecutiveReview"
-                          />
-                          <label class="form-check-label" for="permExecutiveReview">
-                            Executive Review
-                          </label>
-                        </div>
-                      </div>
+                      <div class="template-list border rounded p-3" id="roleModules"></div>
                     </section>
-
                     <section
                       class="tab-pane fade pt-0 mb-0 me-5"
                       id="role-users-pane"
                       role="tabpanel"
                       aria-labelledby="role-users-tab"
-                      tabindex="0"
                     >
-                      <div class="list-group" id="roleAssignedUsers">
-                        <div class="list-group-item d-flex align-items-center ps-1">
-                          <i class="fa-solid fa-user me-2"></i>
-                          akhilesh@summence.com
-                        </div>
-                        <div class="list-group-item d-flex align-items-center ps-1">
-                          <i class="fa-solid fa-user me-2"></i>
-                          priya.sharma@summence.com
-                        </div>
-                        <div class="list-group-item d-flex align-items-center ps-1">
-                          <i class="fa-solid fa-user me-2"></i>
-                          abhishek.bansal@reddit.com
-                        </div>
-                      </div>
+                      <div class="list-group" id="roleAssignedUsers"></div>
                     </section>
                   </div>
                   <ul
                     class="nav flex-column user-detail-tabs"
-                    id="roleDetailTabs"
                     role="tablist"
                     aria-orientation="vertical"
                   >
@@ -662,7 +361,7 @@ Full access to user management, roles, models, and system configuration.</textar
                         aria-controls="role-permissions-pane"
                         aria-selected="false"
                       >
-                        Permissions
+                        Modules
                       </button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -684,17 +383,31 @@ Full access to user management, roles, models, and system configuration.</textar
               </div>
               <div class="card-footer d-flex justify-content-end py-2 px-2" id="roleActionButtons">
                 <div class="btn-group w-30" role="group" aria-label="Role action buttons">
-                  <button type="button" class="btn btn-outline-secondary">
+                  <button type="button" class="btn btn-outline-secondary" id="addRoleButton">
                     <i class="fa-solid fa-plus me-1"></i>
                     Add New
                   </button>
-                  <button type="button" class="btn btn-outline-secondary">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    id="rolePreviousButton"
+                    hidden
+                  >
+                    <i class="fa-solid fa-arrow-left me-1"></i>
+                    Previous
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" id="roleNextButton">
+                    Next
+                    <i class="fa-solid fa-arrow-right ms-1"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    id="saveRoleButton"
+                    hidden
+                  >
                     <i class="fa-solid fa-check me-1"></i>
                     Save
-                  </button>
-                  <button type="button" class="btn btn-danger">
-                    <i class="fa-solid fa-trash-can me-1"></i>
-                    Delete
                   </button>
                 </div>
               </div>
@@ -704,7 +417,6 @@ Full access to user management, roles, models, and system configuration.</textar
       </div>
     </main>
 
-    <!-- Footer -->
     <footer class="bg-dark text-center py-2 mt-auto border-top">
       <div class="container">
         <div class="d-flex align-items-center justify-content-center mb-2">
@@ -713,7 +425,6 @@ Full access to user management, roles, models, and system configuration.</textar
         <p class="text-white mb-0">Supply Chain Lite</p>
       </div>
     </footer>
-
     <script type="module" src="page_assets/user-management/js/main.js"></script>
   </body>
 </html>
