@@ -1,3 +1,4 @@
+import { formatJsonLosslessly } from './jsonFormat.js';
 /**
  * Results panel rendering, CSV export, and clipboard utilities.
  *
@@ -150,7 +151,7 @@ function prettyIfJson(str) {
   const trimmed = str.trim();
   if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.length > 0) {
     try {
-      return JSON.stringify(JSON.parse(trimmed), null, 2);
+      return formatJsonLosslessly(trimmed);
     } catch {
       // not valid JSON — return as-is
     }

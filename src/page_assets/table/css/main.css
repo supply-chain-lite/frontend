@@ -181,3 +181,8 @@ td .form-check-input {
 .col-select-item[draggable="true"]:active {
   cursor: grabbing;
 }
+
+/* Preserve JSON indentation while wrapping long values in the modal. */
+#jsonValueContent {
+  white-space: pre-wrap;
+}

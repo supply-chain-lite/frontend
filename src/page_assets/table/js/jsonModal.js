@@ -1,3 +1,4 @@
+import { formatJsonLosslessly } from './jsonFormat.js';
 import { Modal } from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { bsToastError } from '../../../common/js/bsToast.js';
 
@@ -42,14 +43,15 @@ document.addEventListener('keydown', (event) => {
   // Native tooltip display is truncated, but the title property retains all text.
   const text = hoveredCell.title;
   if (!text.trimStart().startsWith('{') && !text.trimStart().startsWith('[')) return;
+  let prettyJson;
   try {
-    JSON.parse(text);
+    prettyJson = formatJsonLosslessly(text);
   } catch {
     return;
   }
   event.preventDefault();
   previousFocus = document.activeElement;
-  content.textContent = text;
+  content.textContent = prettyJson;
   hoveredCell = null;
   modal.show();
 });
