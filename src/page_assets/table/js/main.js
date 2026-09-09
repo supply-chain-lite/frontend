@@ -3,6 +3,7 @@ window.bootstrap = bootstrap;
 import '../../../scss/styles.scss'; // Bootstrap + SCSS theme
 import '../../../common/css/custom.css'; // shared plain-CSS utilities
 import '../css/main.css'; // table-specific styles
+import './jsonModal.js';
 import api from '@/common/js/api';
 import { saveRedirectUrl, handleAccessControlRedirect, currentPageUrl } from '@/common/js/auth';
 import { getTableHeaders, fetchTableData, fetchColumnFormats, initTableControls } from './tables';
