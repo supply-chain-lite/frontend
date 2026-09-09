@@ -3,6 +3,7 @@ window.bootstrap = bootstrap;
 import '../../../scss/styles.scss';
 import '../../../common/css/custom.css';
 import '../css/main.css';
+import './jsonModal.js';
 import api from '../../../common/js/api.js';
 import {
   saveRedirectUrl,
