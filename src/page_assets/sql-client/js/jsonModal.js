@@ -1,3 +1,4 @@
+import { formatJsonLosslessly } from './jsonFormat.js';
 import { Modal } from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { bsToastError } from '../../../common/js/bsToast.js';
 
@@ -44,7 +45,7 @@ document.addEventListener('keydown', (event) => {
   if (!text.trimStart().startsWith('{') && !text.trimStart().startsWith('[')) return;
   let prettyJson;
   try {
-    prettyJson = JSON.stringify(JSON.parse(text), null, 2);
+    prettyJson = formatJsonLosslessly(text);
   } catch {
     return;
   }

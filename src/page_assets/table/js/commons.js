@@ -1,3 +1,4 @@
+import { formatJsonLosslessly } from './jsonFormat.js';
 // ── Common utilities shared by the table feature ────────────────────────────
 //
 // This module holds pure helpers that are reusable across the table page and
@@ -321,7 +322,7 @@ function prettyIfJson(str) {
   const trimmed = str.trim();
   if (trimmed.length > 0 && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
     try {
-      return JSON.stringify(JSON.parse(trimmed), null, 2);
+      return formatJsonLosslessly(trimmed);
     } catch {
       // not valid JSON — fall through
     }
