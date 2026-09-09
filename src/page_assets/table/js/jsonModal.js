@@ -42,14 +42,15 @@ document.addEventListener('keydown', (event) => {
   // Native tooltip display is truncated, but the title property retains all text.
   const text = hoveredCell.title;
   if (!text.trimStart().startsWith('{') && !text.trimStart().startsWith('[')) return;
+  let prettyJson;
   try {
-    JSON.parse(text);
+    prettyJson = JSON.stringify(JSON.parse(text), null, 2);
   } catch {
     return;
   }
   event.preventDefault();
   previousFocus = document.activeElement;
-  content.textContent = text;
+  content.textContent = prettyJson;
   hoveredCell = null;
   modal.show();
 });

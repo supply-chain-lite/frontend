@@ -373,3 +373,8 @@
   display: flex !important;
   flex-direction: column;
 }
+
+/* Preserve JSON indentation while wrapping long values in the modal. */
+#jsonValueContent {
+  white-space: pre-wrap;
+}
