@@ -32,7 +32,7 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
       - name: Deploy to VPS
-        uses: burnett01/rsync-deployments@9.0.0
+        uses: burnett01/rsync-deployments@9.0.1
         with:
           switches: -avz --delete
           path: dist/
