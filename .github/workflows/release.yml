@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       target_ref:
-        description: "Commit SHA, branch, or PR ref to release"
+        description: 'Commit SHA, branch, or PR ref to release'
         required: true
-        default: "main"
+        default: 'main'
       tag_name:
-        description: "Release tag name, for example v1.0.0"
+        description: 'Release tag name, for example v1.0.0'
         required: true
       release_name:
-        description: "Release title. Defaults to the tag name."
+        description: 'Release title. Defaults to the tag name.'
         required: false
       prerelease:
-        description: "Mark this release as a prerelease"
+        description: 'Mark this release as a prerelease'
         required: true
         type: boolean
         default: false
@@ -28,15 +28,15 @@ jobs:
 
     steps:
       - name: Checkout target
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.target_ref }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
+          node-version-file: '.nvmrc'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
