@@ -209,9 +209,16 @@ async function getTableHeaders(appState) {
       head2.appendChild(th);
     }
 
-    // Text-filter: on Enter, update appState.textFilters and refresh data
+    // Enter applies an open dropdown; otherwise it applies the column's text filter.
     head2.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
+      if (e.key !== 'Enter' || e.isComposing) return;
+      const dropdown = e.target.closest('.input-group')?.querySelector('.dropdown-menu.show');
+      if (dropdown) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.repeat) dropdown.querySelector('.lov-apply-btn')?.click();
+        return;
+      }
       const input = e.target;
       if (input.tagName !== 'INPUT' || input.type !== 'text') return;
 
@@ -613,6 +620,7 @@ async function populateFilterDropdown(dropdown, colName, appState, i) {
   const rawValues = [];
 
   fieldset.innerHTML = '<div class="text-center py-2"><small>Loading…</small></div>';
+  dropdown.querySelector('.clearOKBtn').innerHTML = '';
 
   let values;
   try {
@@ -699,7 +707,7 @@ async function populateFilterDropdown(dropdown, colName, appState, i) {
 
   const OkBtn = document.createElement('button');
   OkBtn.type = 'button';
-  OkBtn.className = 'btn btn-sm btn-dark rounded-2 ms-auto';
+  OkBtn.className = 'btn btn-sm btn-dark rounded-2 ms-auto lov-apply-btn';
   OkBtn.textContent = 'OK';
   const ClearBtn = document.createElement('button');
   ClearBtn.type = 'button';

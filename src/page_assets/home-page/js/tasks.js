@@ -9,6 +9,12 @@ let latestTaskListRequestId = 0;
 let runningTaskPollingTimer = null;
 // Map of task_id -> { task_name, model_name, project_name } for tracking running tasks
 const trackedRunningTasks = new Map();
+// Keep submitted values for each task while the home page remains open.
+const submittedTaskParams = new Map();
+
+function getTaskParamsKey(appState, task) {
+  return JSON.stringify([appState.currentProject, appState.selected_model, task.task_code]);
+}
 
 async function updateModelTasks(appState) {
   const requestId = ++latestTaskListRequestId;
@@ -90,8 +96,13 @@ function openTaskModal(appState, task) {
     p.textContent = 'No parameters required for this task.';
     modalBody.appendChild(p);
   } else {
+    const savedParams = submittedTaskParams.get(getTaskParamsKey(appState, task));
     task.task_params.forEach((param) => {
-      modalBody.appendChild(buildParameterField(param));
+      const fieldParam =
+        param.ParameterType !== 'FIXED' && savedParams?.has(param.ParameterName)
+          ? { ...param, ParameterValue: savedParams.get(param.ParameterName) }
+          : param;
+      modalBody.appendChild(buildParameterField(fieldParam));
     });
   }
 
@@ -343,6 +354,7 @@ function collectTaskParams() {
 
 async function submitTask(appState, task, submitBtn) {
   const taskParams = collectTaskParams();
+  const taskParamsKey = getTaskParamsKey(appState, task);
 
   submitBtn.disabled = true;
   submitBtn.innerHTML =
@@ -362,6 +374,11 @@ async function submitTask(appState, task, submitBtn) {
       );
       return;
     }
+
+    submittedTaskParams.set(
+      taskParamsKey,
+      new Map(taskParams.map((param) => [param.ParameterName, param.ParameterValue]))
+    );
 
     if (!trackedRunningTasks.has(data.task_id)) {
       trackedRunningTasks.set(data.task_id, {

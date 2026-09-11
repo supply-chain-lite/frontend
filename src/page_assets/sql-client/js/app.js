@@ -95,6 +95,10 @@ export async function initApp(state) {
 
 // ===== Objects (Tables / Views) =====
 
+function quoteIdentifier(name) {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
 async function refreshObjects() {
   try {
     const data = await api.post('/sql-client/objects', {
@@ -280,7 +284,7 @@ async function exportTableToCSV(tableName) {
     const result = await api.post('/sql-client/execute', {
       project_name: appState.projectName,
       model_name: appState.modelName,
-      sql: `SELECT * FROM [${tableName}]`,
+      sql: `SELECT * FROM ${quoteIdentifier(tableName)}`,
     });
 
     if (result.type !== 'rows' || !result.rows.length) {
@@ -413,7 +417,7 @@ function bindEvents() {
   on(ddlQueryBtn, 'click', () => {
     const name = ddlObjectName.textContent;
     if (!name) return;
-    const sql = `SELECT * FROM [${name}] LIMIT 1000;`;
+    const sql = `SELECT * FROM ${quoteIdentifier(name)} LIMIT 1000;`;
     addTab(sql);
     executeQuery(sql);
   });
@@ -429,7 +433,7 @@ function bindEvents() {
       const result = await api.post('/sql-client/execute', {
         project_name: appState.projectName,
         model_name: appState.modelName,
-        sql: `SELECT COUNT(*) AS cnt FROM [${name}];`,
+        sql: `SELECT COUNT(*) AS cnt FROM ${quoteIdentifier(name)};`,
       });
       const count = result.rows?.[0]?.[0] ?? '?';
       ddlCountBtn.innerHTML = `<i class="fa-solid fa-hashtag me-1" aria-hidden="true"></i>${Number(count).toLocaleString()} rows`;
