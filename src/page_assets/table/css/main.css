@@ -72,6 +72,14 @@ td .form-check-input {
 
 .scl-table .head2 .dropdown-menu {
   z-index: 1056;
+  min-width: min(var(--bs-dropdown-min-width), 40vw);
+  max-width: 40vw;
+  white-space: normal;
+}
+
+.scl-table .lovValuesFieldset .dropdown-item {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .scl-table .lovValuesFieldset {
