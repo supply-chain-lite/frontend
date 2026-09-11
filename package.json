@@ -4,7 +4,7 @@
   "description": "A frontend starter template with Vite, Bootstrap 5, and SCSS",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "vite",
