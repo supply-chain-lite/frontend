@@ -137,16 +137,16 @@ export function initUserEditor(state, refreshData) {
     const payload = {
       UserEmail: email.value.trim(),
       DisplayName: displayName.value.trim(),
-      RoleName: role.value,
       EndDate: expiry.value,
       MaxConcurrentRuns: Number(maxRunsInput.value),
       Templates: selectedTemplates,
     };
+    if (!selectedUser || role.value !== selectedUser.RoleName) payload.RoleName = role.value;
     if (selectedUser) payload.IsActive = Number(active.checked);
     if (
       !payload.UserEmail ||
       !payload.DisplayName ||
-      !payload.RoleName ||
+      !role.value ||
       !payload.EndDate ||
       payload.MaxConcurrentRuns < 1
     ) {
@@ -174,6 +174,7 @@ export function initUserEditor(state, refreshData) {
       (user) =>
         user.UserEmail?.toLowerCase() === (selectedUserEmail || payload.UserEmail).toLowerCase()
     ) || {
+      ...selectedUser,
       ...payload,
       IsActive: Number(active.checked),
     };
