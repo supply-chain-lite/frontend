@@ -1,0 +1,32 @@
+#main-content {
+  min-height: 100vh;
+}
+
+.s3-panels {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s3-panels > .row {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.s3-panels > .row > [class*="col-"] {
+  display: flex;
+  min-height: 0;
+}
+
+.s3-panels .card {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#fileExplorer,
+#filePreviewer {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+}

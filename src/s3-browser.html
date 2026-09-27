@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>S3 Browser - Supply Chain Lite</title>
+    <link rel="icon" type="image/svg+xml" href="scc.svg" />
+  </head>
+  <body class="min-vh-100 d-flex flex-column">
+    <main id="main-content" class="flex-fill d-flex flex-column" tabindex="-1">
+      <div class="d-flex justify-content-between align-items-center mt-2 mx-1">
+        <h5 class="mb-0 d-flex align-items-center" id="s3PageTitle" aria-live="polite">
+          <span class="mx-3" aria-hidden="true">S3//:</span>
+          <span>Object Browser</span>
+        </h5>
+        <a href="home-page.html" class="text-dark" aria-label="Go to home page">
+          <i class="fa-solid fa-home" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <div>
+        <p class="text-muted mb-2 mx-3">Explore bucket contents and preview files in place.</p>
+      </div>
+
+      <section class="card mb-3 mx-3 p-0" aria-label="Choose S3 root">
+        <div class="card-body p-3">
+          <form id="root-form" class="row align-items-end">
+            <div class="col">
+              <label for="root-input" class="form-label small fw-semibold mb-2">S3 root</label>
+              <div class="input-group">
+                <span class="input-group-text bg-body">
+                  <i class="fa-solid fa-cloud text-primary" aria-hidden="true"></i>
+                </span>
+                <input
+                  id="root-input"
+                  class="form-control font-monospace"
+                  type="text"
+                  value="s3://supply-chain-demo"
+                  placeholder="s3://bucket-name/optional/prefix"
+                  autocomplete="off"
+                  required=""
+                />
+              </div>
+            </div>
+            <div class="col-auto">
+              <div class="btn-group" role="group" aria-label="S3 root actions">
+                <button class="btn btn-outline-dark px-4" type="submit">
+                  <i class="fa-solid fa-folder-open me-2" aria-hidden="true"></i>
+                  Open root
+                </button>
+                <button
+                  id="reset-demo"
+                  class="btn btn-outline-dark"
+                  type="button"
+                  title="Reset saved browser state"
+                >
+                  <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                  <span class="visually-hidden">Reset saved state</span>
+                </button>
+              </div>
+            </div>
+          </form>
+          <div class="form-text">
+            Enter a bucket or a folder path, for example s3://supply-chain-demo/exports
+          </div>
+          <div id="root-error" class="small text-danger mt-2 d-none" role="alert"></div>
+        </div>
+      </section>
+
+      <div class="s3-panels mx-3">
+        <div class="row g-3 mb-3">
+          <div class="col-4">
+            <div class="card h-100">
+              <div id="fileExplorer" class="card-body d-flex flex-column">
+                <h5 class="card-title">File Explorer</h5>
+                
+              </div>
+            </div>
+          </div>
+          <div class="col-8">
+            <div class="card h-100">
+              <div id="filePreviewer" class="card-body d-flex flex-column">
+                <h5 class="card-title">Preview</h5>
+                <table class="table table-hover table-sm table-bordered mb-0 scl-table">
+            <thead class="scl-thead">
+              <tr class="head1">
+                <th>Function</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Completed</th>
+                <th>Duration (s)</th>
+                <th>Retry</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+          <div class="d-flex justify-content-end align-items-center py-2">
+            <span class="text-muted small" id="executionHistoryCount" aria-live="polite">
+              0 Schedules
+            </span>
+          </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+    <script type="module" src="page_assets/s3-browser/js/main.js"></script>
+  </body>
+</html>
