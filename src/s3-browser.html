@@ -13,9 +13,20 @@
           <span class="mx-3" aria-hidden="true">S3//:</span>
           <span>Object Browser</span>
         </h5>
-        <a href="home-page.html" class="text-dark" aria-label="Go to home page">
-          <i class="fa-solid fa-home" aria-hidden="true"></i>
-        </a>
+        <div class="d-flex align-items-center gap-3">
+          <button
+            class="btn btn-outline-secondary btn-sm"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#s3SettingsModal"
+          >
+            <i class="fa-solid fa-gear me-1" aria-hidden="true"></i>
+            Settings
+          </button>
+          <a href="home-page.html" class="text-dark" aria-label="Go to home page">
+            <i class="fa-solid fa-home" aria-hidden="true"></i>
+          </a>
+        </div>
       </div>
 
       <div>
@@ -36,7 +47,7 @@
                   class="form-control font-monospace"
                   type="text"
                   value="s3://supply-chain-demo"
-                  placeholder="s3://bucket-name/optional/prefix"
+                  placeholder="s3://bucket-name/prefix"
                   autocomplete="off"
                   required=""
                 />
@@ -61,7 +72,7 @@
             </div>
           </form>
           <div class="form-text">
-            Enter a bucket or a folder path, for example s3://supply-chain-demo/exports
+            Enter an S3 path such as s3://bucket-name/folder. Configure the endpoint in Settings.
           </div>
           <div id="root-error" class="small text-danger mt-2 d-none" role="alert"></div>
         </div>
@@ -74,6 +85,14 @@
               <div id="fileExplorer" class="card-body d-flex flex-column">
                 <div class="d-flex align-items-center justify-content-between">
                   <h5 class="card-title mb-3">File Explorer</h5>
+                  <button
+                    id="collapse-folders"
+                    class="btn btn-outline-secondary btn-sm mb-3"
+                    type="button"
+                  >
+                    <i class="fa-solid fa-folder-minus me-1" aria-hidden="true"></i>
+                    Collapse all
+                  </button>
                 </div>
               </div>
             </div>
@@ -112,6 +131,63 @@
         </div>
       </div>
     </main>
+    <div
+      class="modal fade"
+      id="s3SettingsModal"
+      tabindex="-1"
+      aria-labelledby="s3SettingsTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <form id="s3-settings-form" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="s3SettingsTitle">S3 settings</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="s3-endpoint" class="form-label">Endpoint URL</label>
+              <input
+                id="s3-endpoint"
+                class="form-control"
+                type="url"
+                placeholder="https://s3.example.com"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="s3-region" class="form-label">Region</label>
+              <input id="s3-region" class="form-control" type="text" autocomplete="off" />
+            </div>
+            <div class="mb-3">
+              <label for="s3-access-key" class="form-label">Access key ID</label>
+              <input id="s3-access-key" class="form-control" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="s3-secret-key" class="form-label">Secret access key</label>
+              <input
+                id="s3-secret-key"
+                class="form-control"
+                type="password"
+                autocomplete="new-password"
+              />
+            </div>
+            <div id="settings-error" class="small text-danger mt-2 d-none" role="alert"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <script type="module" src="page_assets/s3-browser/js/main.js"></script>
   </body>
 </html>

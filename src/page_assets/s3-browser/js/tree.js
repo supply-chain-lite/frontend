@@ -1,6 +1,13 @@
+import api from '@/common/js/api';
+
 const explorer = document.querySelector('#fileExplorer');
+const collapseFoldersButton = document.querySelector('#collapse-folders');
 const rootForm = document.querySelector('#root-form');
 const rootInput = document.querySelector('#root-input');
+const rootError = document.querySelector('#root-error');
+const settingsForm = document.querySelector('#s3-settings-form');
+const settingsError = document.querySelector('#settings-error');
+const settingsModalElement = document.querySelector('#s3SettingsModal');
 const previewEmpty = document.querySelector('#preview-empty');
 const previewContent = document.querySelector('#preview-content');
 const previewIcon = document.querySelector('#preview-icon');
@@ -9,123 +16,162 @@ const previewName = document.querySelector('#preview-name');
 const previewPath = document.querySelector('#preview-path');
 const previewDetails = document.querySelector('#preview-details');
 
-const sampleObjects = [
-  {
-    name: 'incoming',
-    type: 'folder',
-    children: [
-      {
-        name: '2026-09',
-        type: 'folder',
-        children: [
-          { name: 'orders.csv', type: 'file' },
-          { name: 'inventory.csv', type: 'file' },
-        ],
-      },
-      { name: 'supplier-list.csv', type: 'file' },
-    ],
-  },
-  {
-    name: 'processed',
-    type: 'folder',
-    children: [
-      { name: 'inventory-snapshot.parquet', type: 'file' },
-      {
-        name: 'forecasts',
-        type: 'folder',
-        children: [
-          { name: 'demand-forecast.csv', type: 'file' },
-          { name: 'demand-forecast2.csv', type: 'file' },
-          { name: 'demand-forecast3.csv', type: 'file' },
-          { name: 'demand-forecast4.csv', type: 'file' },
-          { name: 'demand-forecast5.csv', type: 'file' },
-          { name: 'demand-forecast6.csv', type: 'file' },
-          { name: 'demand-forecast7.csv', type: 'file' },
-        ],
-      },
-    ],
-  },
-  { name: 'README.txt', type: 'file' },
-];
-
-const expandedFolders = new Set();
+const folderContents = new Map();
+const loadingFolders = new Set();
+const pendingRequests = new Map();
 let selectedPath = '';
+let rootLocation = null;
+const ROOT_STORAGE_KEY = 's3-browser-root';
+const SETTINGS_STORAGE_KEY = 's3-browser-settings';
+
+function readSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveRoot(root) {
+  try {
+    localStorage.setItem(ROOT_STORAGE_KEY, root);
+  } catch {
+    // Keep the current session usable when browser storage is unavailable.
+  }
+}
+
+function parseS3Location(value) {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^s3:\/\/([^/?#]+)(?:\/([^?#]*))?\/?$/i);
+  if (!match) throw new Error('Enter an S3 path such as s3://bucket-name/folder.');
+  const bucket = decodeURIComponent(match[1]);
+  if (!bucket) throw new Error('Enter an S3 bucket, such as s3://bucket-name/path.');
+  return { bucket, prefix: normalizePrefix(decodeURIComponent(match[2] || '')) };
+}
+
 const tree = document.createElement('div');
 tree.className = 's3-tree';
 tree.setAttribute('aria-label', 'S3 file tree');
 explorer.appendChild(tree);
 
-function createNode(node, parentPath) {
-  const path = `${parentPath.replace(/\/$/, '')}/${node.name}`;
-  const listItem = document.createElement('li');
-  const hasChildren = node.type === 'folder' && node.children?.length > 0;
-  const isExpanded = expandedFolders.has(path);
+function normalizePrefix(prefix) {
+  return prefix.replace(/^\/+|\/+$/g, '');
+}
+
+function locationPath(prefix = rootLocation.prefix) {
+  return `s3://${rootLocation.bucket}${prefix ? `/${prefix}` : ''}`;
+}
+
+function getItemPrefix(item, parentPrefix) {
+  let key = String(item.key || item.name).replace(/^\/+|\/+$/g, '');
+  if (key.startsWith('s3://')) {
+    const location = parseS3Location(key);
+    key = location.prefix;
+  }
+  if (!parentPrefix || key === parentPrefix || key.startsWith(`${parentPrefix}/`)) return key;
+  return normalizePrefix(`${parentPrefix}/${key}`);
+}
+
+function makeButton({ name, path, type, childCount, expanded = false }) {
   const button = document.createElement('button');
   const icon = document.createElement('i');
   const label = document.createElement('span');
 
   button.type = 'button';
-  button.className = `s3-tree-node ${node.type === 'folder' ? 's3-tree-folder' : 's3-tree-file'}`;
+  button.className = `s3-tree-node ${type === 'folder' ? 's3-tree-folder' : 's3-tree-file'}`;
   button.dataset.path = path;
-  button.dataset.type = node.type;
-  button.dataset.name = node.name;
-  button.dataset.childCount = String(node.children?.length ?? 0);
+  button.dataset.prefix =
+    path === locationPath('')
+      ? rootLocation.prefix
+      : path.slice(`s3://${rootLocation.bucket}/`.length);
+  button.dataset.type = type;
+  button.dataset.name = name;
+  button.dataset.childCount = String(childCount ?? 0);
   button.classList.toggle('active', path === selectedPath);
   button.setAttribute('aria-selected', String(path === selectedPath));
-  if (node.type === 'folder') button.setAttribute('aria-expanded', String(isExpanded));
-  if (node.type === 'folder' && !hasChildren)
-    button.setAttribute('aria-label', `${node.name}, empty folder`);
+  if (type === 'folder') button.setAttribute('aria-expanded', String(expanded));
 
-  icon.className = `fa-solid ${node.type === 'file' ? 'fa-file' : isExpanded ? 'fa-folder-open' : 'fa-folder'}`;
+  icon.className = `fa-solid ${type === 'file' ? 'fa-file' : expanded ? 'fa-folder-open' : 'fa-folder'}`;
   icon.setAttribute('aria-hidden', 'true');
-  label.textContent = node.name;
+  label.textContent = name;
   button.append(icon, label);
-  listItem.appendChild(button);
-
-  if (hasChildren && isExpanded) {
-    const childList = document.createElement('ul');
-    childList.className = 's3-tree-list';
-    childList.setAttribute('role', 'group');
-    node.children.forEach((child) => childList.appendChild(createNode(child, path)));
-    listItem.appendChild(childList);
-  }
-
-  return listItem;
+  return button;
 }
 
+function appendFolderContents(list, prefix) {
+  const items = folderContents.get(prefix) || [];
+  if (loadingFolders.has(prefix)) {
+    const status = document.createElement('li');
+    status.className = 'small text-muted py-1';
+    status.textContent = 'Loading…';
+    list.appendChild(status);
+    return;
+  }
+  if (items.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'small text-muted py-1';
+    empty.textContent = 'Empty folder';
+    list.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const itemPrefix = item.type === 'folder' ? getItemPrefix(item, prefix) : '';
+    const path =
+      item.type === 'folder' ? locationPath(itemPrefix) : `${locationPath(prefix)}/${item.name}`;
+    const isExpanded = item.type === 'folder' && expandedFolders.has(itemPrefix);
+    const children = folderContents.get(itemPrefix);
+    const listItem = document.createElement('li');
+    const button = makeButton({
+      name: item.name,
+      path,
+      type: item.type,
+      childCount: children?.length ?? 0,
+      expanded: isExpanded,
+    });
+    button.dataset.key = item.key;
+    button.dataset.size = item.size ?? '';
+    button.dataset.lastModified = item.last_modified ?? '';
+    listItem.appendChild(button);
+
+    if (isExpanded) {
+      const childList = document.createElement('ul');
+      childList.className = 's3-tree-list';
+      childList.setAttribute('role', 'group');
+      appendFolderContents(childList, itemPrefix);
+      listItem.appendChild(childList);
+    }
+    list.appendChild(listItem);
+  });
+}
+
+const expandedFolders = new Set();
+
 function renderTree() {
-  const rootPath = rootInput.value.trim().replace(/\/$/, '') || 'S3 root';
-  const rootExpanded = expandedFolders.has(rootPath);
+  if (!rootLocation) return;
   tree.replaceChildren();
+  const rootPath = locationPath();
+  const isExpanded = expandedFolders.has(rootLocation.prefix);
   const rootList = document.createElement('ul');
   rootList.className = 's3-tree-list s3-tree-list-root';
   rootList.setAttribute('role', 'tree');
   const rootItem = document.createElement('li');
-  const rootButton = document.createElement('button');
-  const rootIcon = document.createElement('i');
-  const rootLabel = document.createElement('span');
-
-  rootButton.type = 'button';
-  rootButton.className = 's3-tree-node s3-tree-folder';
-  rootButton.dataset.path = rootPath;
-  rootButton.dataset.type = 'folder';
-  rootButton.dataset.name = rootPath;
-  rootButton.dataset.childCount = String(sampleObjects.length);
-  rootButton.classList.toggle('active', rootPath === selectedPath);
-  rootButton.setAttribute('aria-selected', String(rootPath === selectedPath));
-  rootButton.setAttribute('aria-expanded', String(rootExpanded));
+  const rootButton = makeButton({
+    name: rootPath,
+    path: rootPath,
+    type: 'folder',
+    childCount: folderContents.get(rootLocation.prefix)?.length ?? 0,
+    expanded: isExpanded,
+  });
+  rootButton.dataset.prefix = rootLocation.prefix;
   rootButton.setAttribute('aria-label', `${rootPath}, folder`);
-  rootIcon.className = `fa-solid ${rootExpanded ? 'fa-folder-open' : 'fa-folder'}`;
-  rootIcon.setAttribute('aria-hidden', 'true');
-  rootLabel.textContent = rootPath;
-  rootButton.append(rootIcon, rootLabel);
   rootItem.appendChild(rootButton);
 
-  if (rootExpanded) {
+  if (isExpanded) {
     const childList = document.createElement('ul');
     childList.className = 's3-tree-list';
     childList.setAttribute('role', 'group');
-    sampleObjects.forEach((child) => childList.appendChild(createNode(child, rootPath)));
+    appendFolderContents(childList, rootLocation.prefix);
     rootItem.appendChild(childList);
   }
 
@@ -133,11 +179,70 @@ function renderTree() {
   tree.appendChild(rootList);
 }
 
-function toggleFolder(button) {
-  const path = button.dataset.path;
-  if (expandedFolders.has(path)) expandedFolders.delete(path);
-  else expandedFolders.add(path);
+function showFolderError(message) {
+  rootError.textContent = message;
+  rootError.classList.remove('d-none');
+}
+
+async function loadFolder(prefix) {
+  const normalizedPrefix = normalizePrefix(prefix);
+  const requestKey = `${rootLocation.bucket}/${normalizedPrefix}`;
+  if (folderContents.has(normalizedPrefix)) return folderContents.get(normalizedPrefix);
+  const settings = readSettings();
+  if (!settings.endpointURL) {
+    showFolderError('Add an endpoint URL in Settings before browsing this bucket.');
+    return;
+  }
+  if (pendingRequests.has(requestKey)) return pendingRequests.get(requestKey);
+
+  loadingFolders.add(normalizedPrefix);
   renderTree();
+  const request = api
+    .post('/s3/list', {
+      endpoint: settings.endpointURL,
+      bucket: rootLocation.bucket,
+      prefix: normalizedPrefix,
+      ...(settings.region ? { region: settings.region } : {}),
+      access_key: settings.accessKey || '',
+      secret_key: settings.secretKey || '',
+    })
+    .then((response) => {
+      const files = Array.isArray(response?.files) ? response.files : [];
+      folderContents.set(normalizedPrefix, files);
+      rootError.classList.add('d-none');
+      rootError.textContent = '';
+      return files;
+    })
+    .catch((error) => {
+      showFolderError(error?.data?.detail || `Unable to list ${locationPath(normalizedPrefix)}.`);
+      throw error;
+    })
+    .finally(() => {
+      loadingFolders.delete(normalizedPrefix);
+      pendingRequests.delete(requestKey);
+      renderTree();
+      if (selectedPath === locationPath(normalizedPrefix)) updatePreviewDetails();
+    });
+
+  pendingRequests.set(requestKey, request);
+  return request;
+}
+
+function updatePreviewDetails() {
+  const button = tree.querySelector('.s3-tree-node.active');
+  if (!button) return;
+  if (button.dataset.type === 'folder') {
+    const count = folderContents.get(button.dataset.prefix)?.length ?? 0;
+    button.dataset.childCount = String(count);
+    previewDetails.textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+    return;
+  }
+  const details = [];
+  if (button.dataset.size) details.push(`${Number(button.dataset.size).toLocaleString()} bytes`);
+  if (button.dataset.lastModified) {
+    details.push(new Date(button.dataset.lastModified).toLocaleString());
+  }
+  previewDetails.textContent = details.join(' · ') || 'File';
 }
 
 function selectNode(button) {
@@ -155,41 +260,91 @@ function selectNode(button) {
   previewKind.textContent = isFolder ? 'Folder' : 'File';
   previewName.textContent = button.dataset.name;
   previewPath.textContent = selectedPath;
-  previewDetails.textContent = isFolder
-    ? `${button.dataset.childCount} ${button.dataset.childCount === '1' ? 'item' : 'items'}`
-    : button.dataset.name.includes('.')
-      ? `.${button.dataset.name.split('.').pop()} file`
-      : 'File';
   previewEmpty.classList.add('d-none');
   previewContent.classList.remove('d-none');
+  updatePreviewDetails();
+
+  if (isFolder) {
+    const prefix = button.dataset.prefix;
+    expandedFolders.add(prefix);
+    renderTree();
+    loadFolder(prefix).catch(() => {});
+  }
 }
 
-tree.addEventListener('dblclick', (event) => {
-  const folderButton = event.target.closest('.s3-tree-folder');
-  if (folderButton && folderButton.dataset.path) toggleFolder(folderButton);
-});
-
-// Keep folders keyboard-operable while mouse users use double-click to expand.
 tree.addEventListener('click', (event) => {
   const nodeButton = event.target.closest('.s3-tree-node');
-  if (!nodeButton) return;
-
-  selectNode(nodeButton);
-  if (nodeButton.classList.contains('s3-tree-folder') && event.detail === 0) {
-    toggleFolder(nodeButton);
-  }
+  if (nodeButton) selectNode(nodeButton);
 });
 
-rootForm.addEventListener('submit', (event) => {
-  event.preventDefault();
+collapseFoldersButton.addEventListener('click', () => {
   expandedFolders.clear();
-  const rootPath = rootInput.value.trim().replace(/\/$/, '') || 'S3 root';
-  expandedFolders.add(rootPath);
-  selectedPath = '';
-  previewContent.classList.add('d-none');
-  previewEmpty.classList.remove('d-none');
+  if (rootLocation) expandedFolders.add(rootLocation.prefix);
   renderTree();
 });
 
-expandedFolders.add(rootInput.value.trim().replace(/\/$/, ''));
-renderTree();
+function openRoot(value, persist = false) {
+  try {
+    rootLocation = parseS3Location(value);
+    rootInput.value = `s3://${rootLocation.bucket}${rootLocation.prefix ? `/${rootLocation.prefix}` : ''}`;
+    if (persist) saveRoot(rootInput.value);
+    rootError.classList.add('d-none');
+    rootError.textContent = '';
+    folderContents.clear();
+    expandedFolders.clear();
+    expandedFolders.add(rootLocation.prefix);
+    selectedPath = '';
+    previewContent.classList.add('d-none');
+    previewEmpty.classList.remove('d-none');
+    renderTree();
+    loadFolder(rootLocation.prefix).catch(() => {});
+  } catch (error) {
+    showFolderError(error.message);
+  }
+}
+
+rootForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  openRoot(rootInput.value, true);
+});
+
+settingsForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const endpointURL = document.querySelector('#s3-endpoint').value.trim();
+  try {
+    const endpoint = new window.URL(endpointURL);
+    if (!['http:', 'https:'].includes(endpoint.protocol)) throw new Error();
+    const settings = {
+      endpointURL: endpointURL.replace(/\/+$/, ''),
+      region: document.querySelector('#s3-region').value.trim(),
+      accessKey: document.querySelector('#s3-access-key').value,
+      secretKey: document.querySelector('#s3-secret-key').value,
+    };
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    settingsError.classList.add('d-none');
+    window.bootstrap.Modal.getOrCreateInstance(settingsModalElement).hide();
+    if (rootLocation) openRoot(rootInput.value, false);
+  } catch {
+    settingsError.textContent = 'Enter a valid endpoint URL, including http:// or https://.';
+    settingsError.classList.remove('d-none');
+  }
+});
+
+settingsModalElement.addEventListener('show.bs.modal', () => {
+  const settings = readSettings();
+  document.querySelector('#s3-endpoint').value = settings.endpointURL || '';
+  document.querySelector('#s3-region').value = settings.region || '';
+  document.querySelector('#s3-access-key').value = settings.accessKey || '';
+  document.querySelector('#s3-secret-key').value = settings.secretKey || '';
+  settingsError.classList.add('d-none');
+});
+
+let savedRoot = '';
+try {
+  savedRoot = localStorage.getItem(ROOT_STORAGE_KEY) || '';
+} catch {
+  // Fall back to the page's initial root when browser storage is unavailable.
+}
+const initialRoot = savedRoot || rootInput.value;
+rootInput.value = initialRoot;
+openRoot(initialRoot, false);
