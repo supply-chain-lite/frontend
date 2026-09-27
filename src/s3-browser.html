@@ -72,8 +72,9 @@
           <div class="col-4">
             <div class="card h-100">
               <div id="fileExplorer" class="card-body d-flex flex-column">
-                <h5 class="card-title">File Explorer</h5>
-                
+                <div class="d-flex align-items-center justify-content-between">
+                  <h5 class="card-title mb-3">File Explorer</h5>
+                </div>
               </div>
             </div>
           </div>
@@ -81,31 +82,35 @@
             <div class="card h-100">
               <div id="filePreviewer" class="card-body d-flex flex-column">
                 <h5 class="card-title">Preview</h5>
-                <table class="table table-hover table-sm table-bordered mb-0 scl-table">
-            <thead class="scl-thead">
-              <tr class="head1">
-                <th>Function</th>
-                <th>Status</th>
-                <th>Started</th>
-                <th>Completed</th>
-                <th>Duration (s)</th>
-                <th>Retry</th>
-                <th>Result</th>
-              </tr>
-            </thead>
-            <tbody id="historyTableBody"></tbody>
-          </table>
-          <div class="d-flex justify-content-end align-items-center py-2">
-            <span class="text-muted small" id="executionHistoryCount" aria-live="polite">
-              0 Schedules
-            </span>
-          </div>
+                <div
+                  id="preview-empty"
+                  class="s3-preview-empty d-flex flex-fill align-items-center justify-content-center text-muted"
+                >
+                  <span>
+                    <i class="fa-regular fa-eye me-2" aria-hidden="true"></i>
+                    Select a file or folder to preview.
+                  </span>
+                </div>
+                <section id="preview-content" class="s3-preview d-none" aria-live="polite">
+                  <div class="d-flex align-items-center gap-3 mb-4">
+                    <div id="preview-icon" class="s3-preview-icon" aria-hidden="true"></div>
+                    <div>
+                      <div id="preview-kind" class="small text-muted text-uppercase"></div>
+                      <h5 id="preview-name" class="mb-0"></h5>
+                    </div>
+                  </div>
+                  <dl class="row mb-0">
+                    <dt class="col-sm-3">Path</dt>
+                    <dd id="preview-path" class="col-sm-9 font-monospace text-break"></dd>
+                    <dt class="col-sm-3">Details</dt>
+                    <dd id="preview-details" class="col-sm-9"></dd>
+                  </dl>
+                </section>
               </div>
             </div>
           </div>
         </div>
       </div>
-
     </main>
     <script type="module" src="page_assets/s3-browser/js/main.js"></script>
   </body>
