@@ -14,12 +14,18 @@ const previewIcon = document.querySelector('#preview-icon');
 const previewKind = document.querySelector('#preview-kind');
 const previewName = document.querySelector('#preview-name');
 const previewPath = document.querySelector('#preview-path');
+const previewActions = document.querySelector('#preview-actions');
+const copyFolderUrlButton = document.querySelector('#copy-folder-url');
+const setFolderRootButton = document.querySelector('#set-folder-root');
+const downloadFileButton = document.querySelector('#download-file');
+const copyFolderUrlStatus = document.querySelector('#copy-folder-url-status');
 const previewDetails = document.querySelector('#preview-details');
 
 const folderContents = new Map();
 const loadingFolders = new Set();
 const pendingRequests = new Map();
 let selectedPath = '';
+let selectedPresignedUrl = '';
 let rootLocation = null;
 const ROOT_STORAGE_KEY = 's3-browser-root';
 const SETTINGS_STORAGE_KEY = 's3-browser-settings';
@@ -130,6 +136,7 @@ function appendFolderContents(list, prefix) {
       expanded: isExpanded,
     });
     button.dataset.key = item.key;
+    button.dataset.presignedUrl = item.presigned_url || '';
     button.dataset.size = item.size ?? '';
     button.dataset.lastModified = item.last_modified ?? '';
     listItem.appendChild(button);
@@ -254,12 +261,19 @@ function selectNode(button) {
   });
 
   const isFolder = button.dataset.type === 'folder';
+  selectedPresignedUrl = button.dataset.presignedUrl || '';
   const icon = document.createElement('i');
   icon.className = `fa-solid ${isFolder ? 'fa-folder-open' : 'fa-file'}`;
   previewIcon.replaceChildren(icon);
   previewKind.textContent = isFolder ? 'Folder' : 'File';
   previewName.textContent = button.dataset.name;
   previewPath.textContent = selectedPath;
+  previewActions.classList.toggle('d-none', !button.dataset.type);
+  previewActions.classList.toggle('d-flex', Boolean(button.dataset.type));
+  setFolderRootButton.classList.toggle('d-none', !isFolder);
+  downloadFileButton.classList.toggle('d-none', isFolder);
+  downloadFileButton.disabled = !selectedPresignedUrl;
+  copyFolderUrlStatus.textContent = '';
   previewEmpty.classList.add('d-none');
   previewContent.classList.remove('d-none');
   updatePreviewDetails();
@@ -275,6 +289,31 @@ function selectNode(button) {
 tree.addEventListener('click', (event) => {
   const nodeButton = event.target.closest('.s3-tree-node');
   if (nodeButton) selectNode(nodeButton);
+});
+
+copyFolderUrlButton.addEventListener('click', async () => {
+  try {
+    await window.navigator.clipboard.writeText(selectedPath);
+    copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
+  } catch {
+    showFolderError('Unable to copy the S3 URL. Check clipboard permissions.');
+  }
+});
+
+setFolderRootButton.addEventListener('click', () => {
+  openRoot(selectedPath, true);
+});
+
+downloadFileButton.addEventListener('click', () => {
+  if (!selectedPresignedUrl) return;
+  const link = document.createElement('a');
+  link.href = selectedPresignedUrl;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  copyFolderUrlStatus.textContent = `Opened ${previewName.textContent} using its presigned URL.`;
 });
 
 collapseFoldersButton.addEventListener('click', () => {
@@ -294,6 +333,12 @@ function openRoot(value, persist = false) {
     expandedFolders.clear();
     expandedFolders.add(rootLocation.prefix);
     selectedPath = '';
+    selectedPresignedUrl = '';
+    previewActions.classList.add('d-none');
+    previewActions.classList.remove('d-flex');
+    setFolderRootButton.classList.add('d-none');
+    downloadFileButton.classList.add('d-none');
+    copyFolderUrlStatus.textContent = '';
     previewContent.classList.add('d-none');
     previewEmpty.classList.remove('d-none');
     renderTree();

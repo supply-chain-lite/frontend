@@ -100,7 +100,6 @@
           <div class="col-8">
             <div class="card h-100">
               <div id="filePreviewer" class="card-body d-flex flex-column">
-                <h5 class="card-title">Preview</h5>
                 <div
                   id="preview-empty"
                   class="s3-preview-empty d-flex flex-fill align-items-center justify-content-center text-muted"
@@ -110,17 +109,36 @@
                     Select a file or folder to preview.
                   </span>
                 </div>
-                <section id="preview-content" class="s3-preview d-none" aria-live="polite">
-                  <div class="d-flex align-items-center gap-3 mb-4">
-                    <div id="preview-icon" class="s3-preview-icon" aria-hidden="true"></div>
-                    <div>
-                      <div id="preview-kind" class="small text-muted text-uppercase"></div>
-                      <h5 id="preview-name" class="mb-0"></h5>
+                <section id="preview-content" class="s3-preview p-0 d-none" aria-live="polite">
+                  <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                      <div id="preview-icon" class="s3-preview-icon" aria-hidden="true"></div>
+                      <div>
+                        <div id="preview-kind" class="small text-muted text-uppercase"></div>
+                        <h5 id="preview-name" class="mb-0"></h5>
+                      </div>
                     </div>
+                    <span id="preview-actions" class="d-none flex-wrap gap-2 flex-shrink-0">
+                      <button id="copy-folder-url" class="btn btn-outline-secondary btn-sm" type="button">
+                        <i class="fa-regular fa-copy me-1" aria-hidden="true"></i>
+                        Copy URL
+                      </button>
+                      <button id="set-folder-root" class="btn btn-outline-primary btn-sm d-none" type="button">
+                        <i class="fa-solid fa-folder-tree me-1" aria-hidden="true"></i>
+                        Set as root
+                      </button>
+                      <button id="download-file" class="btn btn-outline-primary btn-sm d-none" type="button">
+                        <i class="fa-solid fa-download me-1" aria-hidden="true"></i>
+                        Download
+                      </button>
+                    </span>
                   </div>
                   <dl class="row mb-0">
                     <dt class="col-sm-3">Path</dt>
-                    <dd id="preview-path" class="col-sm-9 font-monospace text-break"></dd>
+                    <dd class="col-sm-9 font-monospace text-break">
+                      <span id="preview-path" class="font-monospace text-break"></span>
+                      <span id="copy-folder-url-status" class="visually-hidden" aria-live="polite"></span>
+                    </dd>
                     <dt class="col-sm-3">Details</dt>
                     <dd id="preview-details" class="col-sm-9"></dd>
                   </dl>
