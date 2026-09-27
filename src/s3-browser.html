@@ -14,15 +14,6 @@
           <span>Object Browser</span>
         </h5>
         <div class="d-flex align-items-center gap-3">
-          <button
-            class="btn btn-outline-secondary btn-sm"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#s3SettingsModal"
-          >
-            <i class="fa-solid fa-gear me-1" aria-hidden="true"></i>
-            Settings
-          </button>
           <a href="home-page.html" class="text-dark" aria-label="Go to home page">
             <i class="fa-solid fa-home" aria-hidden="true"></i>
           </a>
@@ -54,19 +45,19 @@
               </div>
             </div>
             <div class="col-auto">
-              <div class="btn-group" role="group" aria-label="S3 root actions">
+              <div class="btn-group" role="group" aria-label="S3 root and settings actions">
                 <button class="btn btn-outline-dark px-4" type="submit">
                   <i class="fa-solid fa-folder-open me-2" aria-hidden="true"></i>
                   Open root
                 </button>
                 <button
-                  id="reset-demo"
                   class="btn btn-outline-dark"
                   type="button"
-                  title="Reset saved browser state"
+                  data-bs-toggle="modal"
+                  data-bs-target="#s3SettingsModal"
                 >
-                  <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-                  <span class="visually-hidden">Reset saved state</span>
+                  <i class="fa-solid fa-gear me-1" aria-hidden="true"></i>
+                  Settings
                 </button>
               </div>
             </div>
@@ -119,15 +110,27 @@
                       </div>
                     </div>
                     <span id="preview-actions" class="d-none flex-wrap gap-2 flex-shrink-0">
-                      <button id="copy-folder-url" class="btn btn-outline-secondary btn-sm" type="button">
+                      <button
+                        id="copy-folder-url"
+                        class="btn btn-outline-secondary btn-sm"
+                        type="button"
+                      >
                         <i class="fa-regular fa-copy me-1" aria-hidden="true"></i>
                         Copy URL
                       </button>
-                      <button id="set-folder-root" class="btn btn-outline-primary btn-sm d-none" type="button">
+                      <button
+                        id="set-folder-root"
+                        class="btn btn-outline-primary btn-sm d-none"
+                        type="button"
+                      >
                         <i class="fa-solid fa-folder-tree me-1" aria-hidden="true"></i>
                         Set as root
                       </button>
-                      <button id="download-file" class="btn btn-outline-primary btn-sm d-none" type="button">
+                      <button
+                        id="download-file"
+                        class="btn btn-outline-primary btn-sm d-none"
+                        type="button"
+                      >
                         <i class="fa-solid fa-download me-1" aria-hidden="true"></i>
                         Download
                       </button>
@@ -137,7 +140,11 @@
                     <dt class="col-sm-3">Path</dt>
                     <dd class="col-sm-9 font-monospace text-break">
                       <span id="preview-path" class="font-monospace text-break"></span>
-                      <span id="copy-folder-url-status" class="visually-hidden" aria-live="polite"></span>
+                      <span
+                        id="copy-folder-url-status"
+                        class="visually-hidden"
+                        aria-live="polite"
+                      ></span>
                     </dd>
                     <dt class="col-sm-3">Details</dt>
                     <dd id="preview-details" class="col-sm-9"></dd>
