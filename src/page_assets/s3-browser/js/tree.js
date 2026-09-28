@@ -23,8 +23,9 @@ const copyFolderUrlStatus = document.querySelector('#copy-folder-url-status');
 const previewDetails = document.querySelector('#preview-details');
 
 const folderContents = new Map();
-const loadingFolders = new Set();
+const loadingFolders = new Map();
 const pendingRequests = new Map();
+let requestGeneration = 0;
 let selectedPath = '';
 let rootLocation = null;
 const ROOT_STORAGE_KEY = 's3-browser-root';
@@ -190,9 +191,17 @@ function showFolderError(message) {
   rootError.classList.remove('d-none');
 }
 
+function invalidateFolderRequests() {
+  requestGeneration += 1;
+  folderContents.clear();
+  loadingFolders.clear();
+}
+
 async function loadFolder(prefix) {
   const normalizedPrefix = normalizePrefix(prefix);
-  const requestKey = `${rootLocation.bucket}/${normalizedPrefix}`;
+  const generation = requestGeneration;
+  const bucket = rootLocation.bucket;
+  const requestKey = `${generation}:${bucket}/${normalizedPrefix}`;
   if (folderContents.has(normalizedPrefix)) return folderContents.get(normalizedPrefix);
   const settings = readSettings();
   if (!settings.endpointURL) {
@@ -201,18 +210,19 @@ async function loadFolder(prefix) {
   }
   if (pendingRequests.has(requestKey)) return pendingRequests.get(requestKey);
 
-  loadingFolders.add(normalizedPrefix);
+  loadingFolders.set(normalizedPrefix, generation);
   renderTree();
   const request = api
     .post('/s3/list', {
       endpoint: settings.endpointURL,
-      bucket: rootLocation.bucket,
+      bucket,
       prefix: normalizedPrefix,
       ...(settings.region ? { region: settings.region } : {}),
       access_key: settings.accessKey || '',
       secret_key: settings.secretKey || '',
     })
     .then((response) => {
+      if (generation !== requestGeneration) return [];
       const files = Array.isArray(response?.files) ? response.files : [];
       folderContents.set(normalizedPrefix, files);
       rootError.classList.add('d-none');
@@ -220,14 +230,19 @@ async function loadFolder(prefix) {
       return files;
     })
     .catch((error) => {
+      if (generation !== requestGeneration) throw error;
       showFolderError(error?.data?.detail || `Unable to list ${locationPath(normalizedPrefix)}.`);
       throw error;
     })
     .finally(() => {
-      loadingFolders.delete(normalizedPrefix);
       pendingRequests.delete(requestKey);
-      renderTree();
-      if (selectedPath === locationPath(normalizedPrefix)) updatePreviewDetails();
+      if (loadingFolders.get(normalizedPrefix) === generation) {
+        loadingFolders.delete(normalizedPrefix);
+      }
+      if (generation === requestGeneration) {
+        renderTree();
+        if (selectedPath === locationPath(normalizedPrefix)) updatePreviewDetails();
+      }
     });
 
   pendingRequests.set(requestKey, request);
@@ -321,6 +336,7 @@ downloadFileButton.addEventListener('click', async () => {
   }
 
   const downloadWindow = window.open('about:blank', '_blank');
+  if (downloadWindow) downloadWindow.opener = null;
   downloadFileButton.disabled = true;
   copyFolderUrlStatus.textContent = 'Preparing download…';
   try {
@@ -364,11 +380,11 @@ collapseFoldersButton.addEventListener('click', () => {
 function openRoot(value, persist = false) {
   try {
     rootLocation = parseS3Location(value);
+    invalidateFolderRequests();
     rootInput.value = `s3://${rootLocation.bucket}${rootLocation.prefix ? `/${rootLocation.prefix}` : ''}`;
     if (persist) saveRoot(rootInput.value);
     rootError.classList.add('d-none');
     rootError.textContent = '';
-    folderContents.clear();
     expandedFolders.clear();
     expandedFolders.add(rootLocation.prefix);
     selectedPath = '';
@@ -405,6 +421,7 @@ settingsForm.addEventListener('submit', (event) => {
       secretKey: document.querySelector('#s3-secret-key').value,
     };
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    invalidateFolderRequests();
     settingsError.classList.add('d-none');
     window.bootstrap.Modal.getOrCreateInstance(settingsModalElement).hide();
     if (rootLocation) openRoot(rootInput.value, false);

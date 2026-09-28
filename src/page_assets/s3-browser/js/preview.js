@@ -87,7 +87,7 @@ export async function loadFilePreview({ key, bucket, settings }) {
     const rows = Array.isArray(response?.rows) ? response.rows : [];
     renderPreview(columns, rows);
     previewCount.textContent = `${rows.length} ${rows.length === 1 ? 'row' : 'rows'}`;
-    previewCount.classList.toggle('d-none', rows.length === 500);
+    previewCount.classList.toggle('d-none', Boolean(response?.truncated));
     previewStatus.textContent = response?.truncated ? 'Showing the first 500 rows.' : '';
     if (columns.length === 0)
       previewStatus.textContent = 'This file has no tabular data to display.';
