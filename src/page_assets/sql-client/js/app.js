@@ -23,7 +23,15 @@
 import api from '../../../common/js/api.js';
 import { bsToastError, bsToastSuccess } from '../../../common/js/bsToast.js';
 import { $, on } from '../../../common/js/dom.js';
-import { initEditor, addTab, setEditorValue } from './editor.js';
+import {
+  initEditor,
+  addTab,
+  getEditorCursorPosition,
+  getEditorValue,
+  insertEditorText,
+  setEditorSchema,
+  setEditorValue,
+} from './editor.js';
 import {
   initResults,
   renderResultsTable,
@@ -36,6 +44,7 @@ import {
 let appState = null; // { projectName, modelName }
 let currentDdlObject = null;
 let isExecuting = false;
+let schemaLoadVersion = 0;
 
 // In-memory settings (no localStorage)
 const settings = {
@@ -123,10 +132,55 @@ async function refreshObjects() {
     renderObjectList(viewList, views);
     objectsViewsSection.classList.toggle('d-none', views.length === 0);
 
+    const objectNames = [...tables, ...views];
+    const schema = Object.fromEntries(objectNames.map((name) => [name, []]));
+    setEditorSchema(schema);
+    schemaLoadVersion += 1;
+    void loadEditorSchema(objectNames, schema, schemaLoadVersion);
+
     setStatus(`Connected: ${appState.projectName} > ${appState.modelName}`);
   } catch (err) {
     setStatus('Failed to load objects: ' + err.message, true);
   }
+}
+
+async function loadEditorSchema(objectNames, schema, loadVersion) {
+  let nextObjectIndex = 0;
+
+  async function loadNextObject() {
+    while (nextObjectIndex < objectNames.length) {
+      const name = objectNames[nextObjectIndex];
+      nextObjectIndex += 1;
+
+      try {
+        const result = await api.post(
+          '/sql-client/execute',
+          {
+            project_name: appState.projectName,
+            model_name: appState.modelName,
+            sql: `PRAGMA table_info(${quoteIdentifier(name)})`,
+          },
+          { silent: true }
+        );
+
+        if (result.type !== 'rows') continue;
+
+        const nameIndex = (result.columns || []).findIndex(
+          (column) => String(column).toLowerCase() === 'name'
+        );
+        const columnIndex = nameIndex >= 0 ? nameIndex : 1;
+        schema[name] = result.rows
+          .map((row) => row[columnIndex])
+          .filter((column) => typeof column === 'string' && column.length > 0);
+      } catch {
+        // Table names remain available even when column metadata cannot be loaded.
+      }
+    }
+  }
+
+  const workerCount = Math.min(4, objectNames.length);
+  await Promise.all(Array.from({ length: workerCount }, () => loadNextObject()));
+  if (loadVersion === schemaLoadVersion) setEditorSchema(schema);
 }
 
 function renderObjectList(ul, names) {
@@ -166,8 +220,8 @@ async function showDdl(name) {
 // ===== Query Execution =====
 
 function getQueryAtCursor() {
-  const fullText = sqlEditorEl.value;
-  const cursorPos = sqlEditorEl.selectionStart;
+  const fullText = getEditorValue();
+  const cursorPos = getEditorCursorPosition();
   if (!fullText.trim()) return '';
 
   const stmts = [];
@@ -398,13 +452,24 @@ async function renderHistory() {
 
 function bindEvents() {
   // Ctrl/Cmd+Enter runs query
-  sqlEditorEl.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      showBsTab(resultsTabEl);
-      executeQuery();
-    }
-  });
+  sqlEditorEl.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        e.stopPropagation();
+        insertEditorText('\t');
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        showBsTab(resultsTabEl);
+        executeQuery();
+      }
+    },
+    true
+  );
 
   on(runBtn, 'click', () => {
     showBsTab(resultsTabEl);

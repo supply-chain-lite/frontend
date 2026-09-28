@@ -86,6 +86,16 @@
           </button>
           <button
             class="btn btn-sm btn-outline-dark"
+            title="Upload data file"
+            id="uploadDataFileBtn"
+            aria-label="Upload data file"
+            data-bs-target="#uploadDataFileModal"
+            data-bs-toggle="modal"
+          >
+            <i class="fa-solid fa-file-arrow-up"></i>
+          </button>
+          <button
+            class="btn btn-sm btn-outline-dark"
             id="addColumnBtn"
             title="Add New Column"
             aria-label="Add New Column"
@@ -177,6 +187,53 @@
           >
             <i class="fa-solid fa-copy"></i>
           </button>
+        </div>
+
+        <!-- Upload Data File Modal -->
+        <div
+          class="modal fade"
+          id="uploadDataFileModal"
+          tabindex="-1"
+          data-bs-backdrop="static"
+          aria-labelledby="uploadDataFileLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="uploadDataFileLabel">Upload Data File</h5>
+                <button
+                  class="btn-close"
+                  type="button"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label" for="uploadDataFileType">File Type</label>
+                  <select class="form-select" id="uploadDataFileType">
+                    <option value="csv">CSV</option>
+                    <option value="tsv">TSV</option>
+                    <option value="parquet">Parquet</option>
+                    <option value="json">JSON</option>
+                    <option value="txt">Text</option>
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label" for="uploadDataFile">File</label>
+                  <input type="file" class="form-control" id="uploadDataFile" accept=".csv" />
+                </div>
+                <div class="form-text text-muted">
+                  Choose a file that matches the selected type.
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-dark" id="submitUploadDataFileBtn">Upload</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Select Columns Modal -->
