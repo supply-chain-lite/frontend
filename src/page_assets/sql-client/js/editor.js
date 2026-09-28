@@ -1,9 +1,15 @@
 /**
  * SQL editor tab management.
  *
- * Manages multi-tab SQL editing using the native <textarea id="sql-editor">.
+ * Manages multi-tab SQL editing with CodeMirror and SQLite-aware completion.
  * Each tab stores its own SQL content. Tabs can be added/removed/switched.
  */
+
+import { Compartment } from '@codemirror/state';
+import { sql, SQLDialect, SQLite } from '@codemirror/lang-sql';
+import { basicSetup, EditorView } from 'codemirror';
+
+const sqlDialect = SQLDialect.define({ ...SQLite.spec, identifierQuotes: '"' });
 
 let tabIdCounter = 0;
 const editorTabs = []; // [{ id, title, sql }]
@@ -11,15 +17,28 @@ let activeTabId = null;
 
 const editorTabsUl = document.getElementById('editor-tabs');
 const addTabBtn = document.getElementById('add-tab-btn');
-const sqlEditorEl = document.getElementById('sql-editor');
+const editorHost = document.getElementById('sql-editor');
+const schemaCompartment = new Compartment();
+let editorView;
 
 export function initEditor() {
+  editorView = new EditorView({
+    parent: editorHost,
+    extensions: [
+      basicSetup,
+      schemaCompartment.of(sql({ dialect: sqlDialect, schema: {}, upperCaseKeywords: true })),
+      EditorView.updateListener.of((update) => {
+        if (!update.docChanged) return;
+        const currentTab = editorTabs.find((tab) => tab.id === activeTabId);
+        if (currentTab) currentTab.sql = update.state.doc.toString();
+      }),
+    ],
+  });
+  editorView.contentDOM.setAttribute('aria-label', 'SQL query editor');
+  editorView.contentDOM.setAttribute('spellcheck', 'false');
+
   addTab();
   addTabBtn.addEventListener('click', () => addTab());
-  sqlEditorEl.addEventListener('input', () => {
-    const cur = editorTabs.find((t) => t.id === activeTabId);
-    if (cur) cur.sql = sqlEditorEl.value;
-  });
 }
 
 export function addTab(sql = '') {
@@ -28,13 +47,40 @@ export function addTab(sql = '') {
   editorTabs.push({ id, title, sql });
   switchTab(id);
   renderTabs();
-  sqlEditorEl.focus();
+  editorView.focus();
 }
 
 export function setEditorValue(sql) {
-  sqlEditorEl.value = sql;
+  editorView.dispatch({
+    changes: { from: 0, to: editorView.state.doc.length, insert: sql },
+    selection: { anchor: sql.length },
+  });
   const cur = editorTabs.find((t) => t.id === activeTabId);
   if (cur) cur.sql = sql;
+}
+
+export function getEditorValue() {
+  return editorView.state.doc.toString();
+}
+
+export function getEditorCursorPosition() {
+  return editorView.state.selection.main.head;
+}
+
+export function insertEditorText(text) {
+  const { from, to } = editorView.state.selection.main;
+  editorView.dispatch({
+    changes: { from, to, insert: text },
+    selection: { anchor: from + text.length },
+  });
+}
+
+export function setEditorSchema(schema) {
+  editorView.dispatch({
+    effects: schemaCompartment.reconfigure(
+      sql({ dialect: sqlDialect, schema, upperCaseKeywords: true })
+    ),
+  });
 }
 
 function removeTab(id) {
@@ -53,7 +99,10 @@ function switchTab(id) {
   const tab = editorTabs.find((t) => t.id === id);
   if (!tab) return;
   activeTabId = id;
-  sqlEditorEl.value = tab.sql;
+  editorView.dispatch({
+    changes: { from: 0, to: editorView.state.doc.length, insert: tab.sql },
+    selection: { anchor: tab.sql.length },
+  });
 }
 
 function renderTabs() {
@@ -70,7 +119,7 @@ function renderTabs() {
     btn.addEventListener('click', () => {
       switchTab(tab.id);
       renderTabs();
-      sqlEditorEl.focus();
+      editorView.focus();
     });
 
     li.appendChild(btn);

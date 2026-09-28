@@ -750,12 +750,100 @@ function setupUploadExcel(appState) {
   });
 }
 
+/**
+ * Wire the generic data-file upload modal and submit flow.
+ * @param {Object} appState - Application state.
+ */
+function setupUploadDataFile(appState) {
+  const modalEl = document.getElementById('uploadDataFileModal');
+  const fileTypeSelect = document.getElementById('uploadDataFileType');
+  const fileInput = document.getElementById('uploadDataFile');
+  const submitBtn = document.getElementById('submitUploadDataFileBtn');
+  if (!modalEl || !fileTypeSelect || !fileInput || !submitBtn) return;
+
+  const acceptedExtensions = {
+    csv: ['.csv'],
+    tsv: ['.tsv'],
+    parquet: ['.parquet'],
+    json: ['.json'],
+    txt: ['.txt'],
+  };
+
+  fileTypeSelect.addEventListener('change', () => {
+    fileInput.accept = acceptedExtensions[fileTypeSelect.value].join(',');
+    fileInput.value = '';
+  });
+
+  modalEl.addEventListener('show.bs.modal', () => {
+    fileTypeSelect.value = 'csv';
+    fileInput.accept = acceptedExtensions.csv.join(',');
+    fileInput.value = '';
+  });
+
+  modalEl.addEventListener('hidden.bs.modal', () => {
+    fileInput.value = '';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Upload';
+  });
+
+  submitBtn.addEventListener('click', async () => {
+    if (!appState.projectName || !appState.modelName || !appState.tableName) {
+      bsToastError('No table exists for upload.');
+      return;
+    }
+
+    const selectedFile = fileInput.files?.[0];
+    if (!selectedFile) {
+      bsToastError('Please choose a file to upload.');
+      return;
+    }
+
+    const fileType = fileTypeSelect.value;
+    const allowedExtensions = acceptedExtensions[fileType] ?? [];
+    if (
+      !allowedExtensions.some((extension) => selectedFile.name.toLowerCase().endsWith(extension))
+    ) {
+      bsToastError(`Please choose a ${fileType.toUpperCase()} file.`);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Uploading…';
+
+    try {
+      const formData = new FormData();
+      formData.append('project_name', appState.projectName);
+      formData.append('model_name', appState.modelName);
+      formData.append('table_name', appState.tableName);
+      formData.append('file_type', fileType);
+      formData.append('upload_file', selectedFile);
+
+      await api.postFormData('/tables/upload-file', formData);
+      bsToastSuccess(`${fileType.toUpperCase()} file uploaded successfully`);
+      window.bootstrap.Modal.getInstance(modalEl)?.hide();
+      appState.currentPage = 1;
+      appState.selectedColumn = null;
+      appState.totalRowCount = null;
+      hideSummaryRow();
+      closeAddRow();
+      await fetchTableData(appState);
+    } catch {
+      // api.js already displayed the error toast
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Upload';
+    }
+  });
+}
+
 function initTableModals(appState) {
   initSelectColumnsModal(appState);
   initAddColumnBtn(appState);
   initFormatColumnBtn(appState);
   initUpdateColumnBtn(appState);
   setupUploadExcel(appState);
+  setupUploadDataFile(appState);
 }
 
 export {
