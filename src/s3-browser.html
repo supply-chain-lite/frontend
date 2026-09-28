@@ -149,6 +149,34 @@
                     <dt class="col-sm-3">Details</dt>
                     <dd id="preview-details" class="col-sm-9"></dd>
                   </dl>
+                  <section
+                    id="file-data-preview"
+                    class="mt-4 d-none"
+                    aria-labelledby="file-preview-title"
+                  >
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                      <h6 id="file-preview-title" class="mb-0">Data preview</h6>
+                      <span
+                        id="file-preview-count"
+                        class="small text-muted"
+                        aria-live="polite"
+                      ></span>
+                    </div>
+                    <div id="file-preview-status" class="small text-muted mb-2" role="status"></div>
+                    <div
+                      class="s3-preview-table-wrap"
+                      role="region"
+                      aria-label="File data preview"
+                      tabindex="0"
+                    >
+                      <table class="table table-hover table-sm table-bordered mb-0 scl-table">
+                        <thead class="scl-thead">
+                          <tr id="file-preview-head" class="head1"></tr>
+                        </thead>
+                        <tbody id="file-preview-body"></tbody>
+                      </table>
+                    </div>
+                  </section>
                 </section>
               </div>
             </div>

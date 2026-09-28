@@ -1,4 +1,5 @@
 import api from '@/common/js/api';
+import { clearFilePreview, loadFilePreview } from './preview.js';
 
 const explorer = document.querySelector('#fileExplorer');
 const collapseFoldersButton = document.querySelector('#collapse-folders');
@@ -25,7 +26,6 @@ const folderContents = new Map();
 const loadingFolders = new Set();
 const pendingRequests = new Map();
 let selectedPath = '';
-let selectedPresignedUrl = '';
 let rootLocation = null;
 const ROOT_STORAGE_KEY = 's3-browser-root';
 const SETTINGS_STORAGE_KEY = 's3-browser-settings';
@@ -136,7 +136,6 @@ function appendFolderContents(list, prefix) {
       expanded: isExpanded,
     });
     button.dataset.key = item.key;
-    button.dataset.presignedUrl = item.presigned_url || '';
     button.dataset.size = item.size ?? '';
     button.dataset.lastModified = item.last_modified ?? '';
     listItem.appendChild(button);
@@ -261,7 +260,6 @@ function selectNode(button) {
   });
 
   const isFolder = button.dataset.type === 'folder';
-  selectedPresignedUrl = button.dataset.presignedUrl || '';
   const icon = document.createElement('i');
   icon.className = `fa-solid ${isFolder ? 'fa-folder-open' : 'fa-file'}`;
   previewIcon.replaceChildren(icon);
@@ -272,17 +270,24 @@ function selectNode(button) {
   previewActions.classList.toggle('d-flex', Boolean(button.dataset.type));
   setFolderRootButton.classList.toggle('d-none', !isFolder);
   downloadFileButton.classList.toggle('d-none', isFolder);
-  downloadFileButton.disabled = !selectedPresignedUrl;
+  downloadFileButton.disabled = isFolder || !button.dataset.key;
   copyFolderUrlStatus.textContent = '';
   previewEmpty.classList.add('d-none');
   previewContent.classList.remove('d-none');
   updatePreviewDetails();
 
   if (isFolder) {
+    clearFilePreview();
     const prefix = button.dataset.prefix;
     expandedFolders.add(prefix);
     renderTree();
     loadFolder(prefix).catch(() => {});
+  } else {
+    loadFilePreview({
+      key: button.dataset.key,
+      bucket: rootLocation.bucket,
+      settings: readSettings(),
+    });
   }
 }
 
@@ -304,16 +309,50 @@ setFolderRootButton.addEventListener('click', () => {
   openRoot(selectedPath, true);
 });
 
-downloadFileButton.addEventListener('click', () => {
-  if (!selectedPresignedUrl) return;
-  const link = document.createElement('a');
-  link.href = selectedPresignedUrl;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  copyFolderUrlStatus.textContent = `Opened ${previewName.textContent} using its presigned URL.`;
+downloadFileButton.addEventListener('click', async () => {
+  const selectedButton = tree.querySelector('.s3-tree-node.active');
+  const key = selectedButton?.dataset.key;
+  if (!key || selectedButton.dataset.type !== 'file') return;
+
+  const settings = readSettings();
+  if (!settings.endpointURL) {
+    showFolderError('Add an endpoint URL in Settings before downloading this file.');
+    return;
+  }
+
+  const downloadWindow = window.open('about:blank', '_blank');
+  downloadFileButton.disabled = true;
+  copyFolderUrlStatus.textContent = 'Preparing download…';
+  try {
+    const { presigned_url: presignedUrl } = await api.post('/s3/presigned-url', {
+      endpoint: settings.endpointURL,
+      bucket: rootLocation.bucket,
+      key,
+      ...(settings.region ? { region: settings.region } : {}),
+      access_key: settings.accessKey || '',
+      secret_key: settings.secretKey || '',
+    });
+    if (!presignedUrl) throw new Error('The server did not return a download URL.');
+
+    if (downloadWindow) {
+      downloadWindow.location.href = presignedUrl;
+    } else {
+      const link = document.createElement('a');
+      link.href = presignedUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+    copyFolderUrlStatus.textContent = `Opened ${previewName.textContent} using its presigned URL.`;
+  } catch (error) {
+    downloadWindow?.close();
+    copyFolderUrlStatus.textContent =
+      error?.data?.detail || error.message || 'Unable to prepare the download.';
+  } finally {
+    downloadFileButton.disabled = false;
+  }
 });
 
 collapseFoldersButton.addEventListener('click', () => {
@@ -333,7 +372,7 @@ function openRoot(value, persist = false) {
     expandedFolders.clear();
     expandedFolders.add(rootLocation.prefix);
     selectedPath = '';
-    selectedPresignedUrl = '';
+    clearFilePreview();
     previewActions.classList.add('d-none');
     previewActions.classList.remove('d-flex');
     setFolderRootButton.classList.add('d-none');
