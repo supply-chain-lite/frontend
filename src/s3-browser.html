@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>S3 Browser - Supply Chain Lite</title>
+    <link rel="icon" type="image/svg+xml" href="scc.svg" />
+  </head>
+  <body class="min-vh-100 d-flex flex-column">
+    <main id="main-content" class="flex-fill d-flex flex-column" tabindex="-1">
+      <div class="d-flex justify-content-between align-items-center mt-2 mx-1">
+        <h5 class="mb-0 d-flex align-items-center" id="s3PageTitle" aria-live="polite">
+          <span class="mx-3" aria-hidden="true">S3//:</span>
+          <span>Object Browser</span>
+        </h5>
+        <div class="d-flex align-items-center gap-3">
+          <a href="home-page.html" class="text-dark" aria-label="Go to home page">
+            <i class="fa-solid fa-home" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-muted mb-2 mx-3">Explore bucket contents and preview files in place.</p>
+      </div>
+
+      <section class="card mb-3 mx-3 p-0" aria-label="Choose S3 root">
+        <div class="card-body p-3">
+          <form id="root-form" class="row align-items-end">
+            <div class="col">
+              <label for="root-input" class="form-label small fw-semibold mb-2">S3 root</label>
+              <div class="input-group">
+                <span class="input-group-text bg-body">
+                  <i class="fa-solid fa-cloud text-primary" aria-hidden="true"></i>
+                </span>
+                <input
+                  id="root-input"
+                  class="form-control font-monospace"
+                  type="text"
+                  value="s3://supply-chain-demo"
+                  placeholder="s3://bucket-name/prefix"
+                  autocomplete="off"
+                  required=""
+                />
+              </div>
+            </div>
+            <div class="col-auto">
+              <div class="btn-group" role="group" aria-label="S3 root and settings actions">
+                <button class="btn btn-outline-dark px-4" type="submit">
+                  <i class="fa-solid fa-folder-open me-2" aria-hidden="true"></i>
+                  Open root
+                </button>
+                <button
+                  class="btn btn-outline-dark"
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#s3SettingsModal"
+                >
+                  <i class="fa-solid fa-gear me-1" aria-hidden="true"></i>
+                  Settings
+                </button>
+              </div>
+            </div>
+          </form>
+          <div class="form-text">
+            Enter an S3 path such as s3://bucket-name/folder. Configure the endpoint in Settings.
+          </div>
+          <div id="root-error" class="small text-danger mt-2 d-none" role="alert"></div>
+        </div>
+      </section>
+
+      <div class="s3-panels mx-3">
+        <div class="row g-3 mb-3">
+          <div class="col-4">
+            <div class="card h-100">
+              <div id="fileExplorer" class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between">
+                  <h5 class="card-title mb-3">File Explorer</h5>
+                  <button
+                    id="collapse-folders"
+                    class="btn btn-outline-secondary btn-sm mb-3"
+                    type="button"
+                  >
+                    <i class="fa-solid fa-folder-minus me-1" aria-hidden="true"></i>
+                    Collapse all
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-8">
+            <div class="card h-100">
+              <div id="filePreviewer" class="card-body d-flex flex-column">
+                <div
+                  id="preview-empty"
+                  class="s3-preview-empty d-flex flex-fill align-items-center justify-content-center text-muted"
+                >
+                  <span>
+                    <i class="fa-regular fa-eye me-2" aria-hidden="true"></i>
+                    Select a file or folder to preview.
+                  </span>
+                </div>
+                <section id="preview-content" class="s3-preview p-0 d-none" aria-live="polite">
+                  <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                      <div id="preview-icon" class="s3-preview-icon" aria-hidden="true"></div>
+                      <div>
+                        <div id="preview-kind" class="small text-muted text-uppercase"></div>
+                        <h5 id="preview-name" class="mb-0"></h5>
+                      </div>
+                    </div>
+                    <span id="preview-actions" class="d-none flex-wrap gap-2 flex-shrink-0">
+                      <button
+                        id="copy-folder-url"
+                        class="btn btn-outline-secondary btn-sm"
+                        type="button"
+                      >
+                        <i class="fa-regular fa-copy me-1" aria-hidden="true"></i>
+                        Copy URL
+                      </button>
+                      <button
+                        id="set-folder-root"
+                        class="btn btn-outline-primary btn-sm d-none"
+                        type="button"
+                      >
+                        <i class="fa-solid fa-folder-tree me-1" aria-hidden="true"></i>
+                        Set as root
+                      </button>
+                      <button
+                        id="download-file"
+                        class="btn btn-outline-primary btn-sm d-none"
+                        type="button"
+                      >
+                        <i class="fa-solid fa-download me-1" aria-hidden="true"></i>
+                        Download
+                      </button>
+                    </span>
+                  </div>
+                  <dl class="row mb-0">
+                    <dt class="col-sm-3">Path</dt>
+                    <dd class="col-sm-9 font-monospace text-break">
+                      <span id="preview-path" class="font-monospace text-break"></span>
+                      <span
+                        id="copy-folder-url-status"
+                        class="visually-hidden"
+                        aria-live="polite"
+                      ></span>
+                    </dd>
+                    <dt class="col-sm-3">Details</dt>
+                    <dd id="preview-details" class="col-sm-9"></dd>
+                  </dl>
+                  <section
+                    id="file-data-preview"
+                    class="mt-4 d-none"
+                    aria-labelledby="file-preview-title"
+                  >
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                      <h6 id="file-preview-title" class="mb-0">Data preview</h6>
+                      <span
+                        id="file-preview-count"
+                        class="small text-muted"
+                        aria-live="polite"
+                      ></span>
+                    </div>
+                    <div id="file-preview-status" class="small text-muted mb-2" role="status"></div>
+                    <div
+                      class="s3-preview-table-wrap"
+                      role="region"
+                      aria-label="File data preview"
+                      tabindex="0"
+                    >
+                      <table class="table table-hover table-sm table-bordered mb-0 scl-table">
+                        <thead class="scl-thead">
+                          <tr id="file-preview-head" class="head1"></tr>
+                        </thead>
+                        <tbody id="file-preview-body"></tbody>
+                      </table>
+                    </div>
+                  </section>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div
+      class="modal fade"
+      id="s3SettingsModal"
+      tabindex="-1"
+      aria-labelledby="s3SettingsTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <form id="s3-settings-form" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="s3SettingsTitle">S3 settings</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="s3-endpoint" class="form-label">Endpoint URL</label>
+              <input
+                id="s3-endpoint"
+                class="form-control"
+                type="url"
+                placeholder="https://s3.example.com"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="s3-region" class="form-label">Region</label>
+              <input id="s3-region" class="form-control" type="text" autocomplete="off" />
+            </div>
+            <div class="mb-3">
+              <label for="s3-access-key" class="form-label">Access key ID</label>
+              <input id="s3-access-key" class="form-control" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="s3-secret-key" class="form-label">Secret access key</label>
+              <input
+                id="s3-secret-key"
+                class="form-control"
+                type="password"
+                autocomplete="new-password"
+              />
+            </div>
+            <div id="settings-error" class="small text-danger mt-2 d-none" role="alert"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script type="module" src="page_assets/s3-browser/js/main.js"></script>
+  </body>
+</html>
