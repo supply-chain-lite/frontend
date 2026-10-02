@@ -27,18 +27,13 @@ import {
   initEditor,
   addTab,
   getEditorCursorPosition,
-  getActiveTabId,
   getEditorValue,
   insertEditorText,
   setEditorSchema,
-  setActiveTabChangeHandler,
-  setTabCloseHandler,
   setEditorValue,
 } from './editor.js';
 import {
   initResults,
-  showResultsForTab,
-  removeResultsForTab,
   renderResultsTable,
   showMessage,
   showResultsLoader,
@@ -102,9 +97,6 @@ export async function initApp(state) {
 
   initEditor();
   initResults();
-  setActiveTabChangeHandler(showResultsForTab);
-  setTabCloseHandler(removeResultsForTab);
-  showResultsForTab(getActiveTabId());
   await refreshObjects();
   await renderHistory();
   bindEvents();
@@ -293,10 +285,9 @@ async function executeQuery(sqlOverride = null) {
   const raw = sqlOverride ?? getQueryAtCursor();
   const sql = raw.trim();
   if (!sql) return;
-  const resultTabId = getActiveTabId();
 
   isExecuting = true;
-  showResultsLoader(resultTabId);
+  showResultsLoader();
   setStatus('Executing...');
   runBtn.disabled = true;
 
@@ -311,12 +302,12 @@ async function executeQuery(sqlOverride = null) {
 
     if (result.type === 'rows') {
       const statusMsg = `${result.rows.length} row${result.rows.length !== 1 ? 's' : ''} in ${elapsed}s`;
-      renderResultsTable(result.columns, result.rows, resultTabId);
+      renderResultsTable(result.columns, result.rows);
       setStatus(statusMsg);
       await addToHistory(sql, statusMsg, false);
     } else {
       const statusMsg = `${result.changes ?? 0} row(s) affected (${elapsed}s)`;
-      showMessage(`Query OK. ${statusMsg}`, false, resultTabId);
+      showMessage(`Query OK. ${statusMsg}`);
       setStatus(statusMsg);
       await addToHistory(sql, statusMsg, false);
       await refreshObjects();
@@ -325,7 +316,7 @@ async function executeQuery(sqlOverride = null) {
     await renderHistory();
     showBsTab(resultsTabEl);
   } catch (err) {
-    showMessage(err.message, true, resultTabId);
+    showMessage(err.message, true);
     setStatus('Error', true);
     await addToHistory(sql, err.message, true);
     await renderHistory();
@@ -493,7 +484,6 @@ function bindEvents() {
     if (!name) return;
     const sql = `SELECT * FROM ${quoteIdentifier(name)} LIMIT 1000;`;
     addTab(sql);
-    showBsTab(resultsTabEl);
     executeQuery(sql);
   });
 

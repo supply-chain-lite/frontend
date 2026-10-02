@@ -5,7 +5,6 @@ const explorer = document.querySelector('#fileExplorer');
 const collapseFoldersButton = document.querySelector('#collapse-folders');
 const rootForm = document.querySelector('#root-form');
 const rootInput = document.querySelector('#root-input');
-const upOneFolderButton = document.querySelector('#up-one-folder');
 const rootError = document.querySelector('#root-error');
 const settingsForm = document.querySelector('#s3-settings-form');
 const settingsError = document.querySelector('#settings-error');
@@ -28,7 +27,6 @@ const loadingFolders = new Map();
 const pendingRequests = new Map();
 let requestGeneration = 0;
 let selectedPath = '';
-let folderOpenAtClickStart = '';
 let rootLocation = null;
 const ROOT_STORAGE_KEY = 's3-browser-root';
 const SETTINGS_STORAGE_KEY = 's3-browser-settings';
@@ -261,13 +259,7 @@ function updatePreviewDetails() {
     return;
   }
   const details = [];
-  if (button.dataset.size !== '') {
-    const sizeBytes = Number(button.dataset.size);
-    const unit = sizeBytes >= 1024 ** 3 ? 'GB' : 'MB';
-    const divisor = unit === 'GB' ? 1024 ** 3 : 1024 ** 2;
-    const size = sizeBytes / divisor;
-    details.push(`${size > 0 && size < 0.001 ? '<0.001' : size.toFixed(3)} ${unit}`);
-  }
+  if (button.dataset.size) details.push(`${Number(button.dataset.size).toLocaleString()} bytes`);
   if (button.dataset.lastModified) {
     details.push(new Date(button.dataset.lastModified).toLocaleString());
   }
@@ -316,27 +308,7 @@ function selectNode(button) {
 
 tree.addEventListener('click', (event) => {
   const nodeButton = event.target.closest('.s3-tree-node');
-  if (!nodeButton) return;
-
-  if (event.detail === 1) {
-    folderOpenAtClickStart =
-      nodeButton.dataset.type === 'folder' && expandedFolders.has(nodeButton.dataset.prefix)
-        ? nodeButton.dataset.path
-        : '';
-  }
-
-  if (
-    event.detail === 2 &&
-    nodeButton.dataset.type === 'folder' &&
-    folderOpenAtClickStart === nodeButton.dataset.path
-  ) {
-    expandedFolders.delete(nodeButton.dataset.prefix);
-    folderOpenAtClickStart = '';
-    renderTree();
-    return;
-  }
-
-  selectNode(nodeButton);
+  if (nodeButton) selectNode(nodeButton);
 });
 
 copyFolderUrlButton.addEventListener('click', async () => {
@@ -377,13 +349,12 @@ downloadFileButton.addEventListener('click', async () => {
       secret_key: settings.secretKey || '',
     });
     if (!presignedUrl) throw new Error('The server did not return a download URL.');
-    const downloadUrl = new window.URL(presignedUrl).href;
 
     if (downloadWindow) {
-      downloadWindow.location.href = downloadUrl;
+      downloadWindow.location.href = presignedUrl;
     } else {
       const link = document.createElement('a');
-      link.href = downloadUrl;
+      link.href = presignedUrl;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       document.body.appendChild(link);
@@ -409,7 +380,6 @@ collapseFoldersButton.addEventListener('click', () => {
 function openRoot(value, persist = false) {
   try {
     rootLocation = parseS3Location(value);
-    upOneFolderButton.disabled = !rootLocation.prefix;
     invalidateFolderRequests();
     rootInput.value = `s3://${rootLocation.bucket}${rootLocation.prefix ? `/${rootLocation.prefix}` : ''}`;
     if (persist) saveRoot(rootInput.value);
@@ -436,14 +406,6 @@ function openRoot(value, persist = false) {
 rootForm.addEventListener('submit', (event) => {
   event.preventDefault();
   openRoot(rootInput.value, true);
-});
-
-upOneFolderButton.addEventListener('click', () => {
-  if (!rootLocation?.prefix) return;
-  const parentSegments = rootLocation.prefix.split('/');
-  parentSegments.pop();
-  const parentPrefix = parentSegments.join('/');
-  openRoot(`s3://${rootLocation.bucket}${parentPrefix ? `/${parentPrefix}` : ''}`, true);
 });
 
 settingsForm.addEventListener('submit', (event) => {
