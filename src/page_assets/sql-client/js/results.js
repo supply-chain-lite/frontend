@@ -8,6 +8,9 @@ import { formatJsonLosslessly } from './jsonFormat.js';
 
 let lastColumns = null;
 let lastRows = null;
+let activeResultTabId = null;
+const resultsByTab = new Map();
+const closedResultTabIds = new Set();
 
 const resultsPlaceholder = document.getElementById('results-placeholder');
 const resultsTableWrap = document.getElementById('results-table-wrap');
@@ -31,7 +34,59 @@ export function initResults() {
   });
 }
 
-export function renderResultsTable(columns, rows) {
+export function showResultsForTab(tabId) {
+  activeResultTabId = tabId;
+  renderSnapshot(resultsByTab.get(tabId) || { type: 'empty' });
+}
+
+export function removeResultsForTab(tabId) {
+  closedResultTabIds.add(tabId);
+  resultsByTab.delete(tabId);
+  if (activeResultTabId === tabId) {
+    activeResultTabId = null;
+    renderSnapshot({ type: 'empty' });
+  }
+}
+
+export function renderResultsTable(columns, rows, tabId = activeResultTabId) {
+  if (closedResultTabIds.has(tabId)) return;
+  const snapshot = { type: 'table', columns, rows };
+  resultsByTab.set(tabId, snapshot);
+  if (tabId === activeResultTabId) renderSnapshot(snapshot);
+}
+
+export function showMessage(text, isError = false, tabId = activeResultTabId) {
+  if (closedResultTabIds.has(tabId)) return;
+  const snapshot = { type: 'message', text, isError };
+  resultsByTab.set(tabId, snapshot);
+  if (tabId === activeResultTabId) renderSnapshot(snapshot);
+}
+
+export function clearResults(tabId = activeResultTabId) {
+  const snapshot = { type: 'empty' };
+  resultsByTab.set(tabId, snapshot);
+  if (tabId === activeResultTabId) renderSnapshot(snapshot);
+}
+
+export function showResultsLoader(tabId = activeResultTabId) {
+  const snapshot = { type: 'loading' };
+  resultsByTab.set(tabId, snapshot);
+  if (tabId === activeResultTabId) renderSnapshot(snapshot);
+}
+
+function renderSnapshot(snapshot) {
+  if (snapshot.type === 'table') {
+    renderTable(snapshot.columns, snapshot.rows);
+  } else if (snapshot.type === 'message') {
+    renderMessage(snapshot.text, snapshot.isError);
+  } else if (snapshot.type === 'loading') {
+    renderLoading();
+  } else {
+    renderEmpty();
+  }
+}
+
+function renderTable(columns, rows) {
   lastColumns = columns;
   lastRows = rows;
 
@@ -60,7 +115,7 @@ export function renderResultsTable(columns, rows) {
     .join('');
 }
 
-export function showMessage(text, isError = false) {
+function renderMessage(text, isError = false) {
   lastColumns = null;
   lastRows = null;
   resultsPlaceholder.classList.add('d-none');
@@ -72,7 +127,7 @@ export function showMessage(text, isError = false) {
   resultsMessage.textContent = text;
 }
 
-export function clearResults() {
+function renderEmpty() {
   lastColumns = null;
   lastRows = null;
   resultsPlaceholder.className = 'text-center text-muted fst-italic p-4';
@@ -86,8 +141,8 @@ export function clearResults() {
   resultsTbody.innerHTML = '';
 }
 
-export function showResultsLoader() {
-  clearResults();
+function renderLoading() {
+  renderEmpty();
   resultsPlaceholder.innerHTML =
     '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' +
     '<span>Running query...</span>';
