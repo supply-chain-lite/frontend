@@ -14,8 +14,6 @@ const sqlDialect = SQLDialect.define({ ...SQLite.spec, identifierQuotes: '"' });
 let tabIdCounter = 0;
 const editorTabs = []; // [{ id, title, sql }]
 let activeTabId = null;
-let activeTabChangeHandler = null;
-let tabCloseHandler = null;
 
 const editorTabsUl = document.getElementById('editor-tabs');
 const addTabBtn = document.getElementById('add-tab-btn');
@@ -50,18 +48,6 @@ export function addTab(sql = '') {
   switchTab(id);
   renderTabs();
   editorView.focus();
-}
-
-export function getActiveTabId() {
-  return activeTabId;
-}
-
-export function setActiveTabChangeHandler(handler) {
-  activeTabChangeHandler = handler;
-}
-
-export function setTabCloseHandler(handler) {
-  tabCloseHandler = handler;
 }
 
 export function setEditorValue(sql) {
@@ -102,7 +88,6 @@ function removeTab(id) {
   const idx = editorTabs.findIndex((t) => t.id === id);
   if (idx === -1) return;
   editorTabs.splice(idx, 1);
-  if (tabCloseHandler) tabCloseHandler(id);
   if (activeTabId === id) {
     const next = editorTabs[Math.min(idx, editorTabs.length - 1)];
     switchTab(next.id);
@@ -118,7 +103,6 @@ function switchTab(id) {
     changes: { from: 0, to: editorView.state.doc.length, insert: tab.sql },
     selection: { anchor: tab.sql.length },
   });
-  if (activeTabChangeHandler) activeTabChangeHandler(id);
 }
 
 function renderTabs() {
