@@ -10,6 +10,7 @@ let lastColumns = null;
 let lastRows = null;
 let activeResultTabId = null;
 const resultsByTab = new Map();
+const closedResultTabIds = new Set();
 
 const resultsPlaceholder = document.getElementById('results-placeholder');
 const resultsTableWrap = document.getElementById('results-table-wrap');
@@ -39,6 +40,7 @@ export function showResultsForTab(tabId) {
 }
 
 export function removeResultsForTab(tabId) {
+  closedResultTabIds.add(tabId);
   resultsByTab.delete(tabId);
   if (activeResultTabId === tabId) {
     activeResultTabId = null;
@@ -47,12 +49,14 @@ export function removeResultsForTab(tabId) {
 }
 
 export function renderResultsTable(columns, rows, tabId = activeResultTabId) {
+  if (closedResultTabIds.has(tabId)) return;
   const snapshot = { type: 'table', columns, rows };
   resultsByTab.set(tabId, snapshot);
   if (tabId === activeResultTabId) renderSnapshot(snapshot);
 }
 
 export function showMessage(text, isError = false, tabId = activeResultTabId) {
+  if (closedResultTabIds.has(tabId)) return;
   const snapshot = { type: 'message', text, isError };
   resultsByTab.set(tabId, snapshot);
   if (tabId === activeResultTabId) renderSnapshot(snapshot);
