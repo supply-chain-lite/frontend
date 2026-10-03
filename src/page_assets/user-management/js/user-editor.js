@@ -1,9 +1,11 @@
 import api from '@/common/js/api';
 import { bsToastError, bsToastSuccess } from '@/common/js/bsToast';
+import { initModelAccess } from './model-access';
 
 export function initUserEditor(state, refreshData) {
   let selectedUser = null;
   let savedSnapshot = '';
+  const modelAccess = initModelAccess();
   const email = document.getElementById('selectedUserEmail');
   const displayName = document.getElementById('selectedFirstName');
   const role = document.getElementById('selectedUserRole');
@@ -11,7 +13,22 @@ export function initUserEditor(state, refreshData) {
   const expiry = document.getElementById('accessExpiry');
   const maxRunsInput = document.getElementById('maxConcurrentRuns');
   const templates = document.getElementById('userTemplates');
+  const modelAccessTab = document.getElementById('user-models-tab');
+  const modelAccessTabItem = modelAccessTab.closest('.nav-item');
+  const currentUserEmail =
+    JSON.parse(sessionStorage.getItem('user') || '{}')
+      .email?.trim()
+      .toLowerCase() || '';
   active.addEventListener('change', updateActiveLabel);
+
+  function updateModelAccessVisibility(userEmail) {
+    const isCurrentUser =
+      Boolean(currentUserEmail) && userEmail?.trim().toLowerCase() === currentUserEmail;
+    if (isCurrentUser && modelAccessTab.classList.contains('active')) {
+      document.getElementById('user-details-tab').click();
+    }
+    modelAccessTabItem.hidden = isCurrentUser;
+  }
 
   function updateActiveLabel() {
     document.querySelector('label[for="selectedUserStatus"]').textContent = active.checked
@@ -98,6 +115,8 @@ export function initUserEditor(state, refreshData) {
     expiry.value = user.EndDate;
     maxRunsInput.value = user.MaxConcurrentRuns;
     renderTemplates(user.Templates || []);
+    modelAccess.select(user.UserEmail);
+    updateModelAccessVisibility(user.UserEmail);
     markSaved();
     return true;
   }
@@ -114,6 +133,8 @@ export function initUserEditor(state, refreshData) {
     expiry.value = '';
     maxRunsInput.value = 1;
     renderTemplates();
+    modelAccess.add();
+    updateModelAccessVisibility('');
     markSaved();
     return true;
   }
@@ -126,6 +147,8 @@ export function initUserEditor(state, refreshData) {
     displayName.value = '';
     expiry.value = '';
     renderRoles();
+    modelAccess.saveAs();
+    updateModelAccessVisibility('');
     markSaved();
     return true;
   }
@@ -188,6 +211,7 @@ export function initUserEditor(state, refreshData) {
       state.userDetails.unshift(savedUser);
     }
     selectedUser = savedUser;
+    modelAccess.bind(savedUser.UserEmail);
 
     markSaved();
     return savedUser;

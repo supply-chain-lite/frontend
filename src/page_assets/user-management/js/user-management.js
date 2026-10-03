@@ -5,7 +5,7 @@ import { initRoleEditor } from './role-editor';
 import { initUserEditor } from './user-editor';
 
 const endpoints = ['get-users', 'get-roles', 'get-templates', 'get-modules'];
-const userTabIds = ['user-details-tab', 'user-modules-tab2'];
+const userTabIds = ['user-details-tab', 'user-modules-tab2', 'user-models-tab'];
 const roleTabIds = ['role-details-tab', 'role-permissions-tab', 'role-users-tab'];
 
 export async function initUserManagement() {

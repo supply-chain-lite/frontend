@@ -186,9 +186,94 @@
                         />
                       </div>
                     </section>
+                    <section
+                      class="tab-pane fade pt-0 mb-0 model-access-pane"
+                      id="user-models-pane"
+                      role="tabpanel"
+                      aria-labelledby="user-models-tab"
+                    >
+                      <div
+                        class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3"
+                      >
+                        <div>
+                          <h2 class="h5 mb-1">Model access</h2>
+                          <p class="text-body-secondary small mb-0">
+                            Assign models and choose what this user can do with each one.
+                          </p>
+                        </div>
+                        <button
+                          class="btn btn-dark"
+                          type="button"
+                          data-bs-toggle="modal"
+                          data-bs-target="#assignModelsModal"
+                        >
+                          <i class="fa-solid fa-plus me-1" aria-hidden="true"></i>
+                          Assign models
+                        </button>
+                      </div>
+                      <p class="small text-body-secondary bg-body-tertiary border rounded p-2 mb-3">
+                        <span class="badge text-bg-secondary me-1">Design preview</span>
+                        Model access changes are not saved by the Save button yet.
+                      </p>
+                      <div class="border rounded overflow-hidden mb-3">
+                        <div class="bg-body-tertiary px-3 py-2 d-flex align-items-center gap-2">
+                          <h3 class="h6 mb-0">Assigned models</h3>
+                          <span class="badge text-bg-secondary" id="assignedModelCount">0</span>
+                        </div>
+                        <div class="table-responsive">
+                          <table class="table align-middle mb-0 model-access-table">
+                            <caption class="visually-hidden">
+                              Example model assignments and access levels for the selected user
+                            </caption>
+                            <thead>
+                              <tr>
+                                <th scope="col" class="ps-3">Model</th>
+                                <th scope="col">Access level</th>
+                                <th scope="col" class="text-end pe-3">Remove</th>
+                              </tr>
+                            </thead>
+                            <tbody id="assignedModelRows"></tbody>
+                          </table>
+                        </div>
+                        <div id="modelAccessEmpty" class="text-center p-4" hidden>
+                          <i
+                            class="fa-solid fa-cubes text-body-secondary fs-3 mb-2"
+                            aria-hidden="true"
+                          ></i>
+                          <h4 class="h6">No models assigned</h4>
+                          <p class="small text-body-secondary mb-0">
+                            Choose Assign models to give this user access to one or more models.
+                          </p>
+                        </div>
+                      </div>
+                      <details class="border rounded p-3 small">
+                        <summary class="fw-semibold">Access levels explained</summary>
+                        <dl class="row g-2 mb-0 mt-2">
+                          <dt class="col-sm-4">Copy</dt>
+                          <dd class="col-sm-8">
+                            Create a personal copy. The original model cannot be changed or
+                            executed.
+                          </dd>
+                          <dt class="col-sm-4">Read only</dt>
+                          <dd class="col-sm-8">View the model and its results.</dd>
+                          <dt class="col-sm-4">Read and execute</dt>
+                          <dd class="col-sm-8">
+                            View the model and run tasks. Model editing is disabled.
+                          </dd>
+                          <dt class="col-sm-4">Read, write and execute</dt>
+                          <dd class="col-sm-8">View, edit the model and run tasks.</dd>
+                        </dl>
+                      </details>
+                      <p
+                        id="modelAccessStatus"
+                        class="visually-hidden"
+                        role="status"
+                        aria-live="polite"
+                      ></p>
+                    </section>
                   </div>
                   <ul
-                    class="nav flex-column user-detail-tabs"
+                    class="nav flex-md-column flex-nowrap user-detail-tabs"
                     role="tablist"
                     aria-orientation="vertical"
                   >
@@ -218,6 +303,20 @@
                         aria-selected="false"
                       >
                         Templates
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button
+                        class="nav-link"
+                        id="user-models-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#user-models-pane"
+                        type="button"
+                        role="tab"
+                        aria-controls="user-models-pane"
+                        aria-selected="false"
+                      >
+                        Model Access
                       </button>
                     </li>
                   </ul>
@@ -416,6 +515,97 @@
         </div>
       </div>
     </main>
+
+    <div
+      class="modal fade"
+      id="assignModelsModal"
+      tabindex="-1"
+      aria-labelledby="assignModelsTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="assignModelsTitle">Assign models</h2>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-body-secondary">
+              Select one or more models you own. You can change access for each model after
+              assigning.
+            </p>
+            <div
+              id="modelCatalogTableDiv"
+              class="model-catalog-table-wrap mb-3"
+              role="region"
+              aria-label="Owned models"
+              aria-live="polite"
+            >
+              <table class="table table-hover table-sm table-bordered mb-0 scl-table">
+                <caption class="visually-hidden">
+                  Select owned models by project and model name
+                </caption>
+                <thead class="scl-thead">
+                  <tr class="head1">
+                    <th scope="col" aria-label="Select models"></th>
+                    <th scope="col">Project name</th>
+                    <th scope="col">Model name</th>
+                  </tr>
+                </thead>
+                <tbody id="modelCatalogList"></tbody>
+              </table>
+            </div>
+            <label class="form-label" for="newModelAccess">Access for selected models</label>
+            <select class="form-select" id="newModelAccess" aria-describedby="newModelAccessHelp">
+              <option value="copy">Copy</option>
+              <option value="read" selected>Read only</option>
+              <option value="read-execute">Read and execute</option>
+              <option value="read-write-execute">Read, write and execute</option>
+            </select>
+            <div class="form-text" id="newModelAccessHelp">View the model and its results.</div>
+            <span class="small text-body-secondary" id="modelPickerCount" role="status">
+              0 models selected
+            </span>
+          </div>
+          <div class="modal-footer">
+              <button class="btn btn-secondary me-auto" type="button" data-bs-dismiss="modal">
+                Cancel
+              </button>
+              <button class="btn btn-dark" type="button" id="confirmAssignModels" disabled>
+                Assign selected models
+              </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template id="assignedModelRowTemplate">
+      <tr>
+        <td class="ps-3">
+          <div class="fw-semibold" data-model-name></div>
+          <div class="small text-body-secondary" data-model-project></div>
+        </td>
+        <td>
+          <select class="form-select form-select-sm" data-model-access>
+            <option value="copy">Copy</option>
+            <option value="read">Read only</option>
+            <option value="read-execute">Read and execute</option>
+            <option value="read-write-execute">Read, write and execute</option>
+          </select>
+          <div class="small text-body-secondary mt-1" data-access-description></div>
+        </td>
+        <td class="text-end pe-3">
+          <button class="btn btn-outline-danger btn-sm" type="button" data-remove-model>
+            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+          </button>
+        </td>
+      </tr>
+    </template>
 
     <footer class="bg-dark text-center py-2 mt-auto border-top">
       <div class="container">
