@@ -8,11 +8,15 @@ import { $, on } from '@/common/js/dom';
 import { updateModelTasks } from './tasks';
 let latestTableAccordionRequestId = 0;
 
+async function fetchProjectModels(appState) {
+  const data = await api.post('/models/list');
+  appState.projectModels = data.project_models || {};
+  appState.projects = Object.keys(appState.projectModels);
+}
+
 async function fetchModels(appState) {
   try {
-    const data = await api.post('/models/list');
-    appState.projectModels = data.project_models || {};
-    appState.projects = Object.keys(appState.projectModels);
+    await fetchProjectModels(appState);
   } catch {
     // api.js already displayed the error toast
   }
@@ -112,7 +116,7 @@ function renderCurrentProjectModels(appState) {
  */
 function updateModelActionVisibility(appState) {
   const access =
-    appState.projectModels?.[appState.currentProject]?.[appState.selected_model] || 'none';
+    appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[0] || 'none';
   const backup = document.getElementById('backupModelMenu');
   const restore = document.getElementById('restoreModelMenu');
   const share = document.getElementById('shareModelMenu');
@@ -216,10 +220,7 @@ function setupAddNewModel(appState) {
         with_sample_data: sampleDataCheckbox.checked,
       });
       toastSuccess('Model created successfully!');
-      if (!appState.projectModels[projectName]) {
-        appState.projectModels[projectName] = {};
-      }
-      appState.projectModels[projectName][modelName] = 'owner'; // Add new model to app state with default role
+      await fetchProjectModels(appState);
       renderCurrentProjectModels(appState);
       window.bootstrap.Modal.getInstance(modal)?.hide();
     } catch {
@@ -287,11 +288,7 @@ function setupSaveAsModel(appState) {
         new_model_name: newModelName,
       });
       toastSuccess('Model saved successfully!');
-      // Add new model to app state
-      if (!appState.projectModels[appState.currentProject]) {
-        appState.projectModels[appState.currentProject] = {};
-      }
-      appState.projectModels[appState.currentProject][newModelName] = 'owner';
+      await fetchProjectModels(appState);
       renderCurrentProjectModels(appState);
       window.bootstrap.Modal.getInstance(modal)?.hide();
     } catch {
@@ -347,7 +344,8 @@ function buildModelTree(container, projectModels, currentProject) {
       modelCb.dataset.project = project;
       modelCb.dataset.model = modelName;
 
-      const access = typeof models === 'object' && !Array.isArray(models) ? models[modelName] : '';
+      const access =
+        typeof models === 'object' && !Array.isArray(models) ? models[modelName]?.[0] : '';
       const iconClass = access === 'owner' ? 'fa-solid fa-database' : 'fa-solid fa-link';
       const modelIcon = document.createElement('span');
       modelIcon.className = 'tree-icon me-1';
@@ -605,7 +603,7 @@ function setupRestoreModel(appState) {
  * Wire the "Add Existing Model" modal: populate the model-selection tree on show and handle adding selected models into the current project.
  *
  * When the modal is submitted this function validates selection and name collisions, POSTs to `/models/add-existing`,
- * updates `appState.projectModels` by adding the selected models (preserving their access level or defaulting to `"read"`)
+ * updates `appState.projectModels` by adding the selected models (preserving their access level and ID)
  * into the current project and removing them from their source project, re-renders the current project's model list,
  * and hides the modal. Validation failures show an error toast and abort the operation.
  *
@@ -655,11 +653,11 @@ function setupAddExistingModel(appState) {
 
       // Update local app state
       selected.forEach(({ model_name, project_name }) => {
-        const access = appState.projectModels[project_name]?.[model_name] || 'read';
+        const model = appState.projectModels[project_name]?.[model_name];
         if (!appState.projectModels[appState.currentProject]) {
           appState.projectModels[appState.currentProject] = {};
         }
-        appState.projectModels[appState.currentProject][model_name] = access;
+        appState.projectModels[appState.currentProject][model_name] = model;
         delete appState.projectModels[project_name][model_name];
       });
 
@@ -678,7 +676,7 @@ function setupAddExistingModel(appState) {
  * Wire the Rename Model modal: validate input, call the rename API, and update UI state.
  *
  * Validates a non-empty new model name and checks for name collisions within the current project;
- * on success it updates appState.projectModels for the current project (preserving the model's access),
+ * on success it updates appState.projectModels for the current project (preserving the model's access and ID),
  * sets appState.selected_model to the new name, re-renders the model list, and closes the modal.
  *
  * @param {Object} appState - Application state object (expects properties like `currentProject`, `selected_model`, and `projectModels`).
@@ -734,11 +732,10 @@ function setupRenameModel(appState) {
       });
       toastSuccess('Model renamed successfully!');
 
-      // Update app state: replace old key with new key, preserve access
-      const access =
-        appState.projectModels[appState.currentProject]?.[appState.selected_model] || 'owner';
+      // Update app state: replace old key with new key, preserve access and ID
+      const model = appState.projectModels[appState.currentProject]?.[appState.selected_model];
       delete appState.projectModels[appState.currentProject][appState.selected_model];
-      appState.projectModels[appState.currentProject][newModelName] = access;
+      appState.projectModels[appState.currentProject][newModelName] = model;
       appState.selected_model = newModelName;
 
       renderCurrentProjectModels(appState);
@@ -1281,7 +1278,7 @@ function setupManageAccessModel(appState) {
  * moves the model entry in `appState.projectModels` to the target project, clears `appState.selected_model`, re-renders the
  * current project's model list, shows a success toast, and hides the modal.
  *
- * @param {Object} appState - Application state; expected keys: `currentProject`, `selected_model`, `projects`, and `projectModels` (mapping project -> { modelName: access }).
+ * @param {Object} appState - Application state; expected keys: `currentProject`, `selected_model`, `projects`, and `projectModels` (mapping project -> { modelName: [access, modelId] }).
  */
 
 function setupMoveModel(appState) {
@@ -1354,14 +1351,13 @@ function setupMoveModel(appState) {
       });
       toastSuccess('Model moved successfully!');
 
-      const modelAccess =
-        appState.projectModels[appState.currentProject]?.[appState.selected_model] || 'owner';
+      const model = appState.projectModels[appState.currentProject]?.[appState.selected_model];
 
       if (!appState.projectModels[targetProject]) {
         appState.projectModels[targetProject] = {};
       }
 
-      appState.projectModels[targetProject][appState.selected_model] = modelAccess;
+      appState.projectModels[targetProject][appState.selected_model] = model;
       delete appState.projectModels[appState.currentProject]?.[appState.selected_model];
       appState.selected_model = null;
 
@@ -1380,7 +1376,7 @@ function setupMoveModel(appState) {
  * Initialize the Accept Model modal behavior, handling accept and reject flows for incoming model notifications.
  *
  * On accept: validates the provided new model name and notification id, sends an accept request to the server,
- * adds the accepted model to appState.projectModels[currentProject] with `'owner'` access if saving a copy or `'read'` otherwise,
+ * refreshes appState.projectModels to include the accepted model's access level and ID,
  * refreshes the rendered model list, and closes the modal.
  * On reject: sends a reject request to the server and closes the modal.
  *
@@ -1463,14 +1459,7 @@ function setupAcceptModel(appState) {
       });
       toastSuccess('Model accepted successfully!');
 
-      if (!appState.projectModels[appState.currentProject]) {
-        appState.projectModels[appState.currentProject] = {};
-      }
-      if (saveCopyCheckbox.checked) {
-        appState.projectModels[appState.currentProject][newModelName] = 'owner';
-      } else {
-        appState.projectModels[appState.currentProject][newModelName] = 'read';
-      }
+      await fetchProjectModels(appState);
       renderCurrentProjectModels(appState);
       window.bootstrap.Modal.getInstance(modal)?.hide();
     } catch {

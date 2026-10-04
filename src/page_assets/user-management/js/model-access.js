@@ -81,9 +81,10 @@ export function initModelAccess() {
 
       for (const [project, models] of Object.entries(projectModels)) {
         if (!models || typeof models !== 'object' || Array.isArray(models)) continue;
-        for (const [name, access] of Object.entries(models)) {
+        for (const [name, model] of Object.entries(models)) {
+          const access = model?.[0];
           if (access !== 'owner') continue;
-          const id = JSON.stringify([project, name]);
+          const id = String(model[1]);
           ownerModels.set(id, { id, project, name });
         }
       }
