@@ -11,11 +11,11 @@ export function initModelAccess() {
   const previews = new Map();
   let assignments = new Map();
   let ownerModels = new Map();
+  let catalogReady = false;
   const rows = document.getElementById('assignedModelRows');
   const rowTemplate = document.getElementById('assignedModelRowTemplate');
   const modal = document.getElementById('assignModelsModal');
   const catalog = document.getElementById('modelCatalogList');
-  const defaultAccess = document.getElementById('newModelAccess');
   const assignButton = document.getElementById('confirmAssignModels');
 
   function announce(message) {
@@ -31,15 +31,10 @@ export function initModelAccess() {
       row.querySelector('[data-model-name]').textContent = model.name;
       row.querySelector('[data-model-project]').textContent = model.project;
       const select = row.querySelector('[data-model-access]');
-      const description = row.querySelector('[data-access-description]');
       select.value = access;
       select.setAttribute('aria-label', `Access level for ${model.name}`);
-      description.id = `model-access-description-${id}`;
-      select.setAttribute('aria-describedby', description.id);
-      description.textContent = accessDescriptions[access];
       select.addEventListener('change', () => {
         assignments.set(id, select.value);
-        description.textContent = accessDescriptions[select.value];
         announce(`Access updated for ${model.name} in the preview.`);
       });
       const remove = row.querySelector('[data-remove-model]');
@@ -62,14 +57,14 @@ export function initModelAccess() {
     const count = catalog.querySelectorAll('input:checked').length;
     document.getElementById('modelPickerCount').textContent =
       `${count} model${count === 1 ? '' : 's'} selected`;
-    assignButton.disabled = count === 0;
+    assignButton.disabled = !catalogReady;
   }
 
   function showCatalogMessage(message) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
     cell.className = 'text-body-secondary py-3';
-    cell.colSpan = 3;
+    cell.colSpan = 4;
     cell.textContent = message;
     row.append(cell);
     catalog.replaceChildren(row);
@@ -77,6 +72,7 @@ export function initModelAccess() {
   }
 
   async function loadOwnerModels() {
+    catalogReady = false;
     showCatalogMessage('Loading models…');
     try {
       const response = await api.post('/models/list');
@@ -92,6 +88,7 @@ export function initModelAccess() {
         }
       }
 
+      catalogReady = true;
       catalog.replaceChildren();
       if (!ownerModels.size) {
         showCatalogMessage('No owned models are available.');
@@ -100,45 +97,55 @@ export function initModelAccess() {
 
       for (const model of ownerModels.values()) {
         const row = document.createElement('tr');
-        const checkboxCell = document.createElement('td');
+        const selectionCell = document.createElement('td');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'form-check-input mt-0';
         checkbox.value = model.id;
-        checkbox.disabled = assignments.has(model.id);
+        checkbox.checked = assignments.has(model.id);
         checkbox.setAttribute('aria-label', `Select ${model.name} in ${model.project}`);
-        checkboxCell.append(checkbox);
+        selectionCell.append(checkbox);
 
         const projectCell = document.createElement('td');
         projectCell.textContent = model.project;
         const modelCell = document.createElement('td');
         modelCell.textContent = model.name;
-        row.append(checkboxCell, projectCell, modelCell);
+        const accessCell = document.createElement('td');
+        const select = rowTemplate.content.querySelector('[data-model-access]').cloneNode(true);
+        select.value = assignments.get(model.id) || 'read';
+        select.setAttribute('aria-label', `Access level for ${model.name} in ${model.project}`);
+        select.title = accessDescriptions[select.value];
+        select.addEventListener('change', () => {
+          select.title = accessDescriptions[select.value];
+        });
+        accessCell.append(select);
+        row.append(selectionCell, projectCell, modelCell, accessCell);
         catalog.append(row);
       }
       updatePickerCount();
     } catch {
+      catalogReady = false;
       showCatalogMessage('Unable to load models. Close and reopen this window to try again.');
     }
   }
 
   modal.addEventListener('show.bs.modal', async () => {
-    defaultAccess.value = 'read';
-    document.getElementById('newModelAccessHelp').textContent = accessDescriptions.read;
     await loadOwnerModels();
   });
   catalog.addEventListener('change', updatePickerCount);
-  defaultAccess.addEventListener('change', () => {
-    document.getElementById('newModelAccessHelp').textContent =
-      accessDescriptions[defaultAccess.value];
-  });
   assignButton.addEventListener('click', () => {
-    const selected = [...catalog.querySelectorAll('input:checked')];
-    if (!selected.length) return;
-    for (const checkbox of selected) assignments.set(checkbox.value, defaultAccess.value);
+    if (!catalogReady) return;
+    for (const checkbox of catalog.querySelectorAll('input')) {
+      if (!checkbox.checked) {
+        assignments.delete(checkbox.value);
+      } else {
+        const select = checkbox.closest('tr').querySelector('[data-model-access]');
+        assignments.set(checkbox.value, select.value);
+      }
+    }
     renderAssignments();
     announce(
-      `${selected.length} model${selected.length === 1 ? '' : 's'} assigned in the preview.`
+      `${assignments.size} model${assignments.size === 1 ? '' : 's'} selected in the preview.`
     );
     window.bootstrap.Modal.getInstance(modal).hide();
   });

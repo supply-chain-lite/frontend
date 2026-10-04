@@ -275,9 +275,20 @@
 }
 
 .model-access-pane {
+  height: 100%;
   max-height: 100%;
+  min-height: 0;
   overflow-y: auto;
   padding-right: var(--bs-gutter-x, 1.5rem);
+}
+
+.model-access-pane.active {
+  display: flex;
+  flex-direction: column;
+}
+
+#assignedModelsDivParent {
+  min-height: 0;
 }
 
 #userDetailsBody {
@@ -285,21 +296,47 @@
 }
 
 .model-access-table {
-  min-width: 480px;
+  overflow-wrap: anywhere;
 }
 
-.model-access-table th:nth-child(2) {
-  width: 50%;
+.model-access-table th:nth-child(3) {
+  width: 40%;
 }
 
-.model-access-pane .table-responsive {
-  overflow-y: hidden;
+.model-access-table th:last-child,
+.model-access-table td:last-child {
+  white-space: nowrap;
+  width: 1%;
 }
 
 .model-catalog-table-wrap {
-  border-bottom: 1px solid var(--bs-heading-color);
+  border-bottom: none;
+  container-type: scroll-state;
+  container-name: model-catalog;
   max-height: 260px;
   overflow: auto;
+}
+
+.model-catalog-table-wrap::after {
+  content: '';
+  display: block;
+  position: sticky;
+  bottom: 0;
+  height: 1px;
+  margin-top: -1px;
+  pointer-events: none;
+}
+
+@container model-catalog scroll-state(scrollable: y) {
+  .model-catalog-table-wrap::after {
+    background-color: var(--bs-heading-color);
+  }
+}
+
+#assignedModelsDivParent .model-catalog-table-wrap {
+  flex: 1 1 0;
+  max-height: none;
+  min-height: 0;
 }
 
 #modelCatalogTableDiv th:first-child,
@@ -353,8 +390,18 @@
   }
 
   .model-access-pane {
+    height: auto;
     max-height: none;
     padding-right: 0;
+  }
+
+  #assignedModelsDivParent {
+    min-height: 260px;
+  }
+
+  #assignedModelsDivParent .model-catalog-table-wrap {
+    flex-basis: auto;
+    max-height: 260px;
   }
 
   #userDetailsContainer {

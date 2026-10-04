@@ -11,7 +11,7 @@ import { readdirSync } from 'fs';
  * @returns {Object.<string,string>} An object mapping page names (filename without `.html`) to the resolved absolute path of each HTML file.
  */
 function getHtmlInputs() {
-  const srcDir = resolve(__dirname, 'src');
+  const srcDir = resolve(import.meta.dirname, 'src');
   const inputs = {};
   readdirSync(srcDir)
     .filter((file) => file.endsWith('.html'))
@@ -69,11 +69,11 @@ function faFontPreloadPlugin() {
 export default defineConfig({
   plugins: [faFontPreloadPlugin()],
   appType: 'mpa',
-  root: resolve(__dirname, 'src'),
-  envDir: resolve(__dirname),
+  root: resolve(import.meta.dirname, 'src'),
+  envDir: resolve(import.meta.dirname),
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
   build: {
