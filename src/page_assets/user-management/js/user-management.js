@@ -9,7 +9,14 @@ const userTabIds = ['user-details-tab', 'user-modules-tab2', 'user-models-tab'];
 const roleTabIds = ['role-details-tab', 'role-permissions-tab', 'role-users-tab'];
 
 export async function initUserManagement() {
-  const state = { userDetails: [], roles: [], templates: [], modules: [], HomePages: [] };
+  const state = {
+    /** @type {import('./user-editor').UserDetails[]} /get-users response entries. */
+    userDetails: [],
+    roles: [],
+    templates: [],
+    modules: [],
+    HomePages: [],
+  };
   let isAddingUser = false;
   let isAddingRole = false;
   const userEditor = initUserEditor(state, refresh);

@@ -198,7 +198,7 @@
                         <div>
                           <h2 class="h5 mb-1">Model access</h2>
                           <p class="text-body-secondary small mb-0">
-                            Assign models and choose what this user can do with each one.
+                            Assign non-owned models and choose what this user can do with each one.
                           </p>
                         </div>
                         <button
@@ -212,6 +212,12 @@
                         </button>
                       </div>
 
+                      <p
+                        id="modelAccessFeedback"
+                        class="small text-warning"
+                        role="status"
+                        hidden
+                      ></p>
                       <div
                         id="assignedModelsDivParent"
                         class="border rounded overflow-hidden d-flex flex-column flex-fill"
@@ -227,7 +233,7 @@
                             class="table table-hover table-sm table-bordered align-middle mb-0 scl-table model-access-table"
                           >
                             <caption class="visually-hidden">
-                              Example model assignments and access levels for the selected user
+                              Model assignments and access levels for the selected user
                             </caption>
                             <thead class="scl-thead">
                               <tr class="head1">
@@ -523,7 +529,8 @@
           </div>
           <div class="modal-body">
             <p class="small text-body-secondary">
-              Select or deselect models you own, choose access for each model, then click OK.
+              Select or deselect models, choose access for each model, then click OK. Save the user
+              to submit your selections.
             </p>
             <div
               id="modelCatalogTableDiv"
@@ -534,7 +541,7 @@
             >
               <table class="table table-hover table-sm table-bordered align-middle mb-0 scl-table">
                 <caption class="visually-hidden">
-                  Select owned models by project and model name and choose their access levels
+                  Select models by project and model name and choose their access levels
                 </caption>
                 <thead class="scl-thead">
                   <tr class="head1">
@@ -567,10 +574,10 @@
         <td data-model-name></td>
         <td>
           <select class="form-select form-select-sm p-1" data-model-access>
-            <option value="copy">Copy</option>
-            <option value="read">Read only</option>
-            <option value="read-execute">Read and execute</option>
-            <option value="read-write-execute">Read, write and execute</option>
+            <option value="read">Read</option>
+            <option value="write">Write</option>
+            <option value="execute">Execute</option>
+            <option value="admin">Admin</option>
           </select>
         </td>
         <td class="text-center">

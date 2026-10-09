@@ -9,6 +9,7 @@ import { updateModelTasks } from './tasks';
 let latestTableAccordionRequestId = 0;
 
 async function fetchProjectModels(appState) {
+  /** @type {{project_models: Object<string, Object<string, [string, number]>>}} */
   const data = await api.post('/models/list');
   appState.projectModels = data.project_models || {};
   appState.projects = Object.keys(appState.projectModels);
