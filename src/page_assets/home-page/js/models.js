@@ -851,7 +851,8 @@ function setupDownloadModel(appState) {
     currentModelInput.value = appState.selected_model || '';
     currentModelInput.disabled = true;
 
-    const dbType = appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
+    const dbType =
+      appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
     const extension = String(dbType).toLowerCase() === 'duckdb' ? '.duckdb' : '.db';
     if (fileExtension) fileExtension.textContent = extension;
 
@@ -879,7 +880,8 @@ function setupDownloadModel(appState) {
       const downloadUrl = window.URL.createObjectURL(artifactBlob);
       const anchor = document.createElement('a');
       anchor.href = downloadUrl;
-      const dbType = appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
+      const dbType =
+        appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
       const extension = String(dbType).toLowerCase() === 'duckdb' ? '.duckdb' : '.db';
       anchor.download = fileName || `${appState.selected_model}${extension}`;
       document.body.appendChild(anchor);
@@ -926,7 +928,8 @@ function setupUploadModel(appState) {
     currentModelInput.disabled = true;
     fileInput.value = '';
 
-    const dbType = appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
+    const dbType =
+      appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
     const isDuckDb = String(dbType).toLowerCase() === 'duckdb';
     allowedExtension = isDuckDb ? '.duckdb' : '.db';
     fileInput.accept = allowedExtension;
