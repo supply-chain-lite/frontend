@@ -1,9 +1,36 @@
 import api from '@/common/js/api';
 import { bsToastError, bsToastSuccess } from '@/common/js/bsToast';
+import { initModelAccess } from './model-access';
+
+/**
+ * @typedef {import('./model-assignments').UserModelAssignment} UserModelAssignment
+ * @typedef {Object} UserDetails
+ * @property {string} UserEmail
+ * @property {string} DisplayName
+ * @property {string} RoleName
+ * @property {number} IsActive
+ * @property {string} EndDate
+ * @property {number} MaxConcurrentRuns
+ * @property {string[]} Templates
+ * @property {UserModelAssignment[]} userModels Only this user's non-owned models.
+ * @typedef {{userDetails: UserDetails[]}} GetUsersResponse
+ * @typedef {Object} UserSaveRequest
+ * @property {string} UserEmail
+ * @property {string} DisplayName
+ * @property {string} EndDate
+ * @property {number} MaxConcurrentRuns
+ * @property {string[]} Templates
+ * @property {string} [RoleName]
+ * @property {number} [IsActive]
+ * @property {UserModelAssignment[]|null} [userModels] Omit/null skips updates; [] clears them.
+ * @typedef {UserSaveRequest & {RoleName: string}} AddUserRequest
+ * @typedef {UserSaveRequest & {IsActive: number}} UpdateUserRequest
+ */
 
 export function initUserEditor(state, refreshData) {
   let selectedUser = null;
   let savedSnapshot = '';
+  const modelAccess = initModelAccess();
   const email = document.getElementById('selectedUserEmail');
   const displayName = document.getElementById('selectedFirstName');
   const role = document.getElementById('selectedUserRole');
@@ -11,7 +38,22 @@ export function initUserEditor(state, refreshData) {
   const expiry = document.getElementById('accessExpiry');
   const maxRunsInput = document.getElementById('maxConcurrentRuns');
   const templates = document.getElementById('userTemplates');
+  const modelAccessTab = document.getElementById('user-models-tab');
+  const modelAccessTabItem = modelAccessTab.closest('.nav-item');
+  const currentUserEmail =
+    JSON.parse(sessionStorage.getItem('user') || '{}')
+      .email?.trim()
+      .toLowerCase() || '';
   active.addEventListener('change', updateActiveLabel);
+
+  function updateModelAccessVisibility(userEmail) {
+    const isCurrentUser =
+      Boolean(currentUserEmail) && userEmail?.trim().toLowerCase() === currentUserEmail;
+    if (isCurrentUser && modelAccessTab.classList.contains('active')) {
+      document.getElementById('user-details-tab').click();
+    }
+    modelAccessTabItem.hidden = isCurrentUser;
+  }
 
   function updateActiveLabel() {
     document.querySelector('label[for="selectedUserStatus"]').textContent = active.checked
@@ -30,6 +72,7 @@ export function initUserEditor(state, refreshData) {
       templates: [...templates.querySelectorAll('input:checked')]
         .map((input) => input.value)
         .sort(),
+      userModels: modelAccess.snapshot(),
     });
   }
 
@@ -98,6 +141,8 @@ export function initUserEditor(state, refreshData) {
     expiry.value = user.EndDate;
     maxRunsInput.value = user.MaxConcurrentRuns;
     renderTemplates(user.Templates || []);
+    modelAccess.select(user);
+    updateModelAccessVisibility(user.UserEmail);
     markSaved();
     return true;
   }
@@ -114,6 +159,8 @@ export function initUserEditor(state, refreshData) {
     expiry.value = '';
     maxRunsInput.value = 1;
     renderTemplates();
+    modelAccess.add();
+    updateModelAccessVisibility('');
     markSaved();
     return true;
   }
@@ -126,6 +173,8 @@ export function initUserEditor(state, refreshData) {
     displayName.value = '';
     expiry.value = '';
     renderRoles();
+    modelAccess.saveAs();
+    updateModelAccessVisibility('');
     markSaved();
     return true;
   }
@@ -134,6 +183,7 @@ export function initUserEditor(state, refreshData) {
     const selectedTemplates = [...templates.querySelectorAll('input:checked')].map(
       (input) => input.value
     );
+    /** @type {UserSaveRequest} */
     const payload = {
       UserEmail: email.value.trim(),
       DisplayName: displayName.value.trim(),
@@ -163,6 +213,18 @@ export function initUserEditor(state, refreshData) {
       email.focus();
       return false;
     }
+    const requestedModels = modelAccess.requestModels(!selectedUser);
+    if (requestedModels !== undefined) {
+      if (
+        requestedModels.some(
+          (model) => !['read', 'write', 'execute', 'admin'].includes(model.AccessLevel)
+        )
+      ) {
+        bsToastError('Choose a supported access level for each assigned model.');
+        return false;
+      }
+      payload.userModels = requestedModels;
+    }
     const endpoint = selectedUser ? 'update-user' : 'add-user';
     const selectedUserEmail = selectedUser?.UserEmail;
     const isNewUser = !selectedUser;
@@ -170,12 +232,16 @@ export function initUserEditor(state, refreshData) {
     bsToastSuccess(response.message);
     await refreshData();
 
+    // Never use submitted assignments as evidence that model access was persisted.
+    const userFields = { ...payload };
+    delete userFields.userModels;
     const savedUser = state.userDetails.find(
       (user) =>
         user.UserEmail?.toLowerCase() === (selectedUserEmail || payload.UserEmail).toLowerCase()
     ) || {
       ...selectedUser,
-      ...payload,
+      ...userFields,
+      userModels: selectedUser?.userModels || [],
       IsActive: Number(active.checked),
     };
 
@@ -188,6 +254,7 @@ export function initUserEditor(state, refreshData) {
       state.userDetails.unshift(savedUser);
     }
     selectedUser = savedUser;
+    modelAccess.select(savedUser);
 
     markSaved();
     return savedUser;

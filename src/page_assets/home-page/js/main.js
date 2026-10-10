@@ -105,7 +105,7 @@ function autosizeModelListBody() {
 
 const appState = {
   user: null,
-  /** { [projectName]: string[] }  — project → model names */
+  /** @type {Object<string, Object<string, [string, number]>>} Access level and model ID pairs. */
   projectModels: {},
   /** Current active project name */
   currentProject: '',

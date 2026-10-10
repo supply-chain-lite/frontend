@@ -186,9 +186,87 @@
                         />
                       </div>
                     </section>
+                    <section
+                      class="tab-pane fade pt-0 mb-0 model-access-pane"
+                      id="user-models-pane"
+                      role="tabpanel"
+                      aria-labelledby="user-models-tab"
+                    >
+                      <div
+                        class="d-flex flex-wrap flex-shrink-0 align-items-start justify-content-between gap-3 mb-3"
+                      >
+                        <div>
+                          <h2 class="h5 mb-1">Model access</h2>
+                          <p class="text-body-secondary small mb-0">
+                            Assign non-owned models and choose what this user can do with each one.
+                          </p>
+                        </div>
+                        <button
+                          class="btn btn-dark"
+                          type="button"
+                          data-bs-toggle="modal"
+                          data-bs-target="#assignModelsModal"
+                        >
+                          <i class="fa-solid fa-plus me-1" aria-hidden="true"></i>
+                          Assign models
+                        </button>
+                      </div>
+
+                      <p
+                        id="modelAccessFeedback"
+                        class="small text-warning"
+                        role="status"
+                        hidden
+                      ></p>
+                      <div
+                        id="assignedModelsDivParent"
+                        class="border rounded overflow-hidden d-flex flex-column flex-fill"
+                      >
+                        <div
+                          class="bg-body-tertiary px-3 py-2 d-flex flex-shrink-0 align-items-center gap-2"
+                        >
+                          <h3 class="h6 mb-0">Assigned models</h3>
+                          <span class="badge text-bg-secondary" id="assignedModelCount">0</span>
+                        </div>
+                        <div class="table-responsive model-catalog-table-wrap px-2">
+                          <table
+                            class="table table-hover table-sm table-bordered align-middle mb-0 scl-table model-access-table"
+                          >
+                            <caption class="visually-hidden">
+                              Model assignments and access levels for the selected user
+                            </caption>
+                            <thead class="scl-thead">
+                              <tr class="head1">
+                                <th scope="col">Project name</th>
+                                <th scope="col">Model name</th>
+                                <th scope="col">Access level</th>
+                                <th scope="col" class="text-center">Remove</th>
+                              </tr>
+                            </thead>
+                            <tbody id="assignedModelRows"></tbody>
+                          </table>
+                        </div>
+                        <div id="modelAccessEmpty" class="text-center p-4" hidden>
+                          <i
+                            class="fa-solid fa-cubes text-body-secondary fs-3 mb-2"
+                            aria-hidden="true"
+                          ></i>
+                          <h4 class="h6">No models assigned</h4>
+                          <p class="small text-body-secondary mb-0">
+                            Choose Assign models to give this user access to one or more models.
+                          </p>
+                        </div>
+                      </div>
+                      <p
+                        id="modelAccessStatus"
+                        class="visually-hidden"
+                        role="status"
+                        aria-live="polite"
+                      ></p>
+                    </section>
                   </div>
                   <ul
-                    class="nav flex-column user-detail-tabs"
+                    class="nav flex-md-column flex-nowrap user-detail-tabs"
                     role="tablist"
                     aria-orientation="vertical"
                   >
@@ -218,6 +296,20 @@
                         aria-selected="false"
                       >
                         Templates
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button
+                        class="nav-link"
+                        id="user-models-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#user-models-pane"
+                        type="button"
+                        role="tab"
+                        aria-controls="user-models-pane"
+                        aria-selected="false"
+                      >
+                        Model Access
                       </button>
                     </li>
                   </ul>
@@ -416,6 +508,85 @@
         </div>
       </div>
     </main>
+
+    <div
+      class="modal fade"
+      id="assignModelsModal"
+      tabindex="-1"
+      aria-labelledby="assignModelsTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="assignModelsTitle">Assign models</h2>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-body-secondary">
+              Select or deselect models, choose access for each model, then click OK. Save the user
+              to submit your selections.
+            </p>
+            <div
+              id="modelCatalogTableDiv"
+              class="model-catalog-table-wrap mb-3"
+              role="region"
+              aria-label="Owned models"
+              aria-live="polite"
+            >
+              <table class="table table-hover table-sm table-bordered align-middle mb-0 scl-table">
+                <caption class="visually-hidden">
+                  Select models by project and model name and choose their access levels
+                </caption>
+                <thead class="scl-thead">
+                  <tr class="head1">
+                    <th scope="col" aria-label="Select models"></th>
+                    <th scope="col">Project name</th>
+                    <th scope="col">Model name</th>
+                    <th scope="col">Access</th>
+                  </tr>
+                </thead>
+                <tbody id="modelCatalogList"></tbody>
+              </table>
+            </div>
+            <span class="small text-body-secondary" id="modelPickerCount" role="status">
+              0 models selected
+            </span>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary me-auto" type="button" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button class="btn btn-dark" type="button" id="confirmAssignModels" disabled>OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template id="assignedModelRowTemplate">
+      <tr>
+        <td data-model-project></td>
+        <td data-model-name></td>
+        <td>
+          <select class="form-select form-select-sm p-1" data-model-access>
+            <option value="read">Read</option>
+            <option value="write">Write</option>
+            <option value="execute">Execute</option>
+            <option value="admin">Admin</option>
+          </select>
+        </td>
+        <td class="text-center">
+          <button class="btn btn-outline-danger btn-sm" type="button" data-remove-model>
+            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+          </button>
+        </td>
+      </tr>
+    </template>
 
     <footer class="bg-dark text-center py-2 mt-auto border-top">
       <div class="container">
