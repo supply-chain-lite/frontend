@@ -1,7 +1,7 @@
 /**
  * @typedef {'read'|'write'|'execute'|'admin'} ModelAccessLevel
  * @typedef {{ModelId: number, AccessLevel: ModelAccessLevel}} UserModelAssignment
- * @typedef {Object<string, Object<string, [string, number]>>} ProjectModels
+ * @typedef {Object<string, Object<string, [string, number, string]>>} ProjectModels
  * @typedef {{project_models: ProjectModels}} ModelListingResponse
  * Both /models/list and /user-management/get-user-models return this shape.
  */
@@ -14,8 +14,9 @@ export function indexModelListing(projectModels = {}) {
     for (const [name, pair] of Object.entries(models)) {
       if (!Array.isArray(pair)) continue;
       const [access, id] = pair;
+      const db_type = pair[2];
       if (!Number.isSafeInteger(id) || id < 1 || typeof access !== 'string') continue;
-      if (!indexed.has(id)) indexed.set(id, { id, project, name, access });
+      if (!indexed.has(id)) indexed.set(id, { id, project, name, access, db_type });
     }
   }
   return indexed;
