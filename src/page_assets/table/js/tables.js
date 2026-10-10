@@ -1737,7 +1737,23 @@ function initCopyRowsBtn(appState) {
         .map((row) => row.map(sanitizeCellForClipboard).join('\t'))
         .join('\r\n');
 
-      await window.navigator.clipboard.writeText(tsv);
+      try {
+        await window.navigator.clipboard.writeText(tsv);
+      } catch {
+        // The server fetch above can outlast the browser's transient clipboard
+        // permission for this click. Fall back to the synchronous copy command.
+        const textarea = document.createElement('textarea');
+        textarea.value = tsv;
+        textarea.className = 'position-fixed opacity-0';
+        textarea.setAttribute('aria-label', 'Table rows to copy');
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          if (!document.execCommand('copy')) throw new Error('Copy command failed');
+        } finally {
+          textarea.remove();
+        }
+      }
 
       const rowCount = rows.length;
       bsToastSuccess(`Copied ${rowCount} row${rowCount !== 1 ? 's' : ''} to clipboard`);

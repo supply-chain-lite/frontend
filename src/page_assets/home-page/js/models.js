@@ -9,7 +9,7 @@ import { updateModelTasks } from './tasks';
 let latestTableAccordionRequestId = 0;
 
 async function fetchProjectModels(appState) {
-  /** @type {{project_models: Object<string, Object<string, [string, number]>>}} */
+  /** @type {{project_models: Object<string, Object<string, [string, number, string]>>}} */
   const data = await api.post('/models/list');
   appState.projectModels = data.project_models || {};
   appState.projects = Object.keys(appState.projectModels);
@@ -841,6 +841,7 @@ function setupDownloadModel(appState) {
   const modal = $('#downloadModelModal');
   const currentProjectInput = $('#downloadProjectName');
   const currentModelInput = $('#downloadModelName');
+  const fileExtension = $('#downloadModelFileExtension');
   const submitBtn = $('#submitDownloadModelBtn');
   if (!modal || !submitBtn) return;
 
@@ -849,6 +850,10 @@ function setupDownloadModel(appState) {
     currentProjectInput.disabled = true;
     currentModelInput.value = appState.selected_model || '';
     currentModelInput.disabled = true;
+
+    const dbType = appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
+    const extension = String(dbType).toLowerCase() === 'duckdb' ? '.duckdb' : '.db';
+    if (fileExtension) fileExtension.textContent = extension;
 
     if (!appState.currentProject || !appState.selected_model) {
       toastError('No model selected for download.');
@@ -874,7 +879,9 @@ function setupDownloadModel(appState) {
       const downloadUrl = window.URL.createObjectURL(artifactBlob);
       const anchor = document.createElement('a');
       anchor.href = downloadUrl;
-      anchor.download = fileName || `${appState.selected_model}.db`;
+      const dbType = appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
+      const extension = String(dbType).toLowerCase() === 'duckdb' ? '.duckdb' : '.db';
+      anchor.download = fileName || `${appState.selected_model}${extension}`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -894,7 +901,7 @@ function setupDownloadModel(appState) {
 /**
  * Wire the upload-model modal to the UI and handle validating and uploading a model artifact file.
  *
- * Validates the selected file has a `.db` or `.sqlite3` extension, sends it as FormData to `/models/upload`,
+ * Validates the selected file has the extension matching the selected model's database type and sends it as FormData to `/models/upload`,
  * shows a success toast and closes the modal on success.
  * @param {Object} appState - Application state containing `currentProject` and `selected_model` used to populate the modal.
  */
@@ -904,10 +911,13 @@ function setupUploadModel(appState) {
   const currentProjectInput = $('#uploadProjectName');
   const currentModelInput = $('#uploadModelName');
   const fileInput = $('#uploadModelFile');
+  const fileExtensionLabel = $('#uploadModelFileExtension');
+  const dbTypeLabel = $('#uploadModelDbType');
+  const alertFileExtension = $('.upload-model-file-extension');
   const submitBtn = $('#submitUploadModelBtn');
   if (!modal || !submitBtn || !fileInput) return;
 
-  const allowedExtensions = ['.db', '.sqlite3'];
+  let allowedExtension = '.db';
 
   on(modal, 'show.bs.modal', () => {
     currentProjectInput.value = appState.currentProject || '';
@@ -915,7 +925,14 @@ function setupUploadModel(appState) {
     currentModelInput.value = appState.selected_model || '';
     currentModelInput.disabled = true;
     fileInput.value = '';
-    fileInput.accept = allowedExtensions.join(',');
+
+    const dbType = appState.projectModels?.[appState.currentProject]?.[appState.selected_model]?.[2];
+    const isDuckDb = String(dbType).toLowerCase() === 'duckdb';
+    allowedExtension = isDuckDb ? '.duckdb' : '.db';
+    fileInput.accept = allowedExtension;
+    if (fileExtensionLabel) fileExtensionLabel.textContent = allowedExtension;
+    if (dbTypeLabel) dbTypeLabel.textContent = isDuckDb ? 'DuckDB' : 'SQLite';
+    if (alertFileExtension) alertFileExtension.textContent = allowedExtension;
 
     if (!appState.currentProject || !appState.selected_model) {
       toastError('No model selected for upload.');
@@ -942,9 +959,8 @@ function setupUploadModel(appState) {
     }
 
     const lowerName = selectedFile.name.toLowerCase();
-    const isAllowedFile = allowedExtensions.some((extension) => lowerName.endsWith(extension));
-    if (!isAllowedFile) {
-      toastError('Only .db and .sqlite3 files are supported.');
+    if (!lowerName.endsWith(allowedExtension)) {
+      toastError(`Only ${allowedExtension} files are supported for this model.`);
       return;
     }
 
@@ -1279,7 +1295,7 @@ function setupManageAccessModel(appState) {
  * moves the model entry in `appState.projectModels` to the target project, clears `appState.selected_model`, re-renders the
  * current project's model list, shows a success toast, and hides the modal.
  *
- * @param {Object} appState - Application state; expected keys: `currentProject`, `selected_model`, `projects`, and `projectModels` (mapping project -> { modelName: [access, modelId] }).
+ * @param {Object} appState - Application state; expected keys: `currentProject`, `selected_model`, `projects`, and `projectModels` (mapping project -> { modelName: [access, modelId, db_type] }).
  */
 
 function setupMoveModel(appState) {
