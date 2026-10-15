@@ -129,6 +129,19 @@ body {
   border-bottom: 1px solid var(--bs-heading-color);
 }
 
+.s3-image-preview {
+  display: flex;
+  max-height: 60vh;
+  justify-content: center;
+  overflow: auto;
+  background: var(--bs-tertiary-bg);
+}
+
+.s3-image-preview img {
+  max-height: 60vh;
+  object-fit: contain;
+}
+
 .s3-preview-table-wrap .scl-table {
   width: max-content;
   min-width: 100%;

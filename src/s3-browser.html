@@ -166,7 +166,7 @@
                     aria-labelledby="file-preview-title"
                   >
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                      <h6 id="file-preview-title" class="mb-0">Data preview</h6>
+                      <h6 id="file-preview-title" class="mb-0">File preview</h6>
                       <span
                         id="file-preview-count"
                         class="small text-muted"
@@ -174,8 +174,12 @@
                       ></span>
                     </div>
                     <div id="file-preview-status" class="small text-muted mb-2" role="status"></div>
+                    <div id="image-preview-wrap" class="s3-image-preview d-none">
+                      <img id="image-preview" class="img-fluid rounded" alt="" />
+                    </div>
                     <div
                       class="s3-preview-table-wrap"
+                      id="file-preview-table-wrap"
                       role="region"
                       aria-label="File data preview"
                       tabindex="0"
