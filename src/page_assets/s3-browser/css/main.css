@@ -137,9 +137,19 @@ body {
   background: var(--bs-tertiary-bg);
 }
 
-.s3-image-preview img {
+.s3-image-preview img,
+.s3-video-preview video {
+  max-width: 100%;
   max-height: 60vh;
   object-fit: contain;
+}
+
+.s3-video-preview {
+  display: flex;
+  max-height: 60vh;
+  justify-content: center;
+  overflow: auto;
+  background: var(--bs-tertiary-bg);
 }
 
 .s3-preview-table-wrap .scl-table {

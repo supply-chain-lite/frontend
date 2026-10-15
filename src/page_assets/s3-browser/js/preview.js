@@ -7,6 +7,8 @@ const previewCount = document.querySelector('#file-preview-count');
 const previewStatus = document.querySelector('#file-preview-status');
 const imagePreviewWrap = document.querySelector('#image-preview-wrap');
 const imagePreview = document.querySelector('#image-preview');
+const videoPreviewWrap = document.querySelector('#video-preview-wrap');
+const videoPreview = document.querySelector('#video-preview');
 const previewTableWrap = document.querySelector('#file-preview-table-wrap');
 const previewableExtensions = new Set(['csv', 'xls', 'xlsx', 'json', 'parquet', 'txt']);
 const imageExtensions = new Set([
@@ -25,6 +27,20 @@ const imageExtensions = new Set([
   'tif',
   'tiff',
   'webp',
+]);
+const videoExtensions = new Set([
+  '3gp',
+  'avi',
+  'm4v',
+  'mkv',
+  'mov',
+  'mp4',
+  'mpeg',
+  'mpg',
+  'ogv',
+  'ts',
+  'webm',
+  'wmv',
 ]);
 let activeRequest = 0;
 
@@ -52,6 +68,10 @@ export function clearFilePreview() {
   imagePreview.removeAttribute('src');
   imagePreview.alt = '';
   imagePreviewWrap.classList.add('d-none');
+  videoPreview.pause();
+  videoPreview.removeAttribute('src');
+  videoPreview.load();
+  videoPreviewWrap.classList.add('d-none');
   previewTableWrap.classList.remove('d-none');
   clearPreviewContent();
 }
@@ -82,7 +102,8 @@ function renderPreview(columns, rows) {
 export async function loadFilePreview({ key, bucket, settings }) {
   const extension = getExtension(key);
   const isImage = imageExtensions.has(extension);
-  if (!isImage && !previewableExtensions.has(extension)) {
+  const isVideo = videoExtensions.has(extension);
+  if (!isImage && !isVideo && !previewableExtensions.has(extension)) {
     clearFilePreview();
     return;
   }
@@ -92,17 +113,21 @@ export async function loadFilePreview({ key, bucket, settings }) {
   clearPreviewContent();
   imagePreview.removeAttribute('src');
   imagePreview.alt = '';
+  videoPreview.pause();
+  videoPreview.removeAttribute('src');
+  videoPreview.load();
   imagePreviewWrap.classList.toggle('d-none', !isImage);
-  previewTableWrap.classList.toggle('d-none', isImage);
+  videoPreviewWrap.classList.toggle('d-none', !isVideo);
+  previewTableWrap.classList.toggle('d-none', isImage || isVideo);
 
   if (!settings.endpointURL) {
     previewStatus.textContent = 'Add an endpoint URL in Settings to preview this file.';
     return;
   }
 
-  previewStatus.textContent = isImage ? 'Loading image…' : 'Loading preview…';
+  previewStatus.textContent = isImage ? 'Loading image…' : isVideo ? 'Loading video…' : 'Loading preview…';
   try {
-    if (isImage) {
+    if (isImage || isVideo) {
       const { presigned_url: presignedUrl } = await api.post('/s3/presigned-url', {
         endpoint: settings.endpointURL,
         bucket,
@@ -114,22 +139,29 @@ export async function loadFilePreview({ key, bucket, settings }) {
       if (requestId !== activeRequest) return;
       if (!presignedUrl) throw new Error('The server did not return a preview URL.');
 
-      imagePreview.alt = key.split('/').pop() || 'S3 image preview';
-      imagePreview.addEventListener(
-        'load',
+      const mediaElement = isImage ? imagePreview : videoPreview;
+      mediaElement.addEventListener(
+        isImage ? 'load' : 'loadedmetadata',
         () => {
           if (requestId === activeRequest) previewStatus.textContent = '';
         },
         { once: true },
       );
-      imagePreview.addEventListener(
+      mediaElement.addEventListener(
         'error',
         () => {
-          if (requestId === activeRequest) previewStatus.textContent = 'Unable to load this image.';
+          if (requestId === activeRequest) {
+            previewStatus.textContent = isImage
+              ? 'Unable to load this image.'
+              : 'Unable to play this video format.';
+          }
         },
         { once: true },
       );
-      imagePreview.src = new window.URL(presignedUrl).href;
+      if (isImage) {
+        imagePreview.alt = key.split('/').pop() || 'S3 image preview';
+      }
+      mediaElement.src = new window.URL(presignedUrl).href;
       return;
     }
 
