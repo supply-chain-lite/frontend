@@ -125,10 +125,13 @@ function appendFolderContents(list, prefix) {
   }
 
   items.forEach((item) => {
+    if (item.type === 'folder' && !String(item.name || '').trim()) return;
+
     const itemPrefix = item.type === 'folder' ? getItemPrefix(item, prefix) : '';
     const path =
       item.type === 'folder' ? locationPath(itemPrefix) : `${locationPath(prefix)}/${item.name}`;
-    const isExpanded = item.type === 'folder' && expandedFolders.has(itemPrefix);
+    const isExpanded =
+      item.type === 'folder' && itemPrefix !== prefix && expandedFolders.has(itemPrefix);
     const children = folderContents.get(itemPrefix);
     const listItem = document.createElement('li');
     const button = makeButton({
