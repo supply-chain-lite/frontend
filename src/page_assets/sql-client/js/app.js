@@ -450,7 +450,9 @@ async function renderHistory() {
 
     tr.querySelector('.hist-copy-btn').addEventListener('click', async (e) => {
       e.stopPropagation();
-      await copyToClipboard(entry.sql);
+      if (await copyToClipboard(entry.sql)) {
+        bsToastSuccess('SQL copied to clipboard.');
+      }
     });
 
     historyTbody.appendChild(tr);
