@@ -1,4 +1,5 @@
 import api from '@/common/js/api';
+import { bsToastSuccess } from '../../../common/js/bsToast.js';
 import { clearFilePreview, loadFilePreview } from './preview.js';
 
 const explorer = document.querySelector('#fileExplorer');
@@ -346,6 +347,7 @@ copyFolderUrlButton.addEventListener('click', async () => {
   try {
     await window.navigator.clipboard.writeText(selectedPath);
     copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
+    bsToastSuccess('S3 URL copied to clipboard.');
   } catch {
     const textarea = document.createElement('textarea');
     textarea.value = selectedPath;
@@ -356,6 +358,7 @@ copyFolderUrlButton.addEventListener('click', async () => {
     try {
       if (!document.execCommand('copy')) throw new Error('Copy command failed');
       copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
+      bsToastSuccess('S3 URL copied to clipboard.');
     } catch {
       showFolderError('Unable to copy the S3 URL. Check clipboard permissions.');
     } finally {
