@@ -1,5 +1,4 @@
 import api from '@/common/js/api';
-import { bsToastSuccess } from '../../../common/js/bsToast.js';
 import { clearFilePreview, loadFilePreview } from './preview.js';
 
 const explorer = document.querySelector('#fileExplorer');
@@ -19,6 +18,16 @@ const previewName = document.querySelector('#preview-name');
 const previewPath = document.querySelector('#preview-path');
 const previewActions = document.querySelector('#preview-actions');
 const copyFolderUrlButton = document.querySelector('#copy-folder-url');
+const copyFolderUrlOriginalMarkup = copyFolderUrlButton.innerHTML;
+let copyFolderUrlResetTimer;
+
+function showUrlCopied() {
+  window.clearTimeout(copyFolderUrlResetTimer);
+  copyFolderUrlButton.innerHTML = '<i class="fa-solid fa-check me-1" aria-hidden="true"></i>Copied';
+  copyFolderUrlResetTimer = window.setTimeout(() => {
+    copyFolderUrlButton.innerHTML = copyFolderUrlOriginalMarkup;
+  }, 2000);
+}
 const setFolderRootButton = document.querySelector('#set-folder-root');
 const downloadFileButton = document.querySelector('#download-file');
 const copyFolderUrlStatus = document.querySelector('#copy-folder-url-status');
@@ -279,6 +288,8 @@ function updatePreviewDetails() {
 }
 
 function selectNode(button) {
+  window.clearTimeout(copyFolderUrlResetTimer);
+  copyFolderUrlButton.innerHTML = copyFolderUrlOriginalMarkup;
   selectedPath = button.dataset.path;
   tree.querySelectorAll('.s3-tree-node').forEach((nodeButton) => {
     const isActive = nodeButton.dataset.path === selectedPath;
@@ -347,7 +358,7 @@ copyFolderUrlButton.addEventListener('click', async () => {
   try {
     await window.navigator.clipboard.writeText(selectedPath);
     copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
-    bsToastSuccess('S3 URL copied to clipboard.');
+    showUrlCopied();
   } catch {
     const textarea = document.createElement('textarea');
     textarea.value = selectedPath;
@@ -358,7 +369,7 @@ copyFolderUrlButton.addEventListener('click', async () => {
     try {
       if (!document.execCommand('copy')) throw new Error('Copy command failed');
       copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
-      bsToastSuccess('S3 URL copied to clipboard.');
+      showUrlCopied();
     } catch {
       showFolderError('Unable to copy the S3 URL. Check clipboard permissions.');
     } finally {

@@ -1,3 +1,4 @@
+import { showCopyFeedback } from './copyFeedback.js';
 /**
  * SQL client core application logic.
  *
@@ -450,8 +451,9 @@ async function renderHistory() {
 
     tr.querySelector('.hist-copy-btn').addEventListener('click', async (e) => {
       e.stopPropagation();
+      const copyButton = e.currentTarget;
       if (await copyToClipboard(entry.sql)) {
-        bsToastSuccess('SQL copied to clipboard.');
+        showCopyFeedback(copyButton);
       }
     });
 
@@ -525,7 +527,7 @@ function bindEvents() {
   // DDL: Copy DDL text
   on(ddlCopyBtn, 'click', async () => {
     if (await copyToClipboard(ddlCode.textContent)) {
-      bsToastSuccess('DDL copied');
+      showCopyFeedback(ddlCopyBtn);
     }
   });
 

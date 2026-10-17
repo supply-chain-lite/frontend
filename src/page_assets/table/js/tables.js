@@ -1,3 +1,4 @@
+import { showCopyFeedback } from './copyFeedback.js';
 import api from '@/common/js/api';
 import { bsToastWarning, bsToastSuccess } from '@/common/js/bsToast';
 import {
@@ -1680,6 +1681,7 @@ function initCopyRowsBtn(appState) {
 
     copyBtn.disabled = true;
     showTableLoader();
+    let copied = false;
     try {
       let rows;
 
@@ -1755,14 +1757,14 @@ function initCopyRowsBtn(appState) {
         }
       }
 
-      const rowCount = rows.length;
-      bsToastSuccess(`Copied ${rowCount} row${rowCount !== 1 ? 's' : ''} to clipboard`);
+      copied = true;
     } catch {
       bsToastWarning('Failed to copy rows to clipboard');
     } finally {
       hideTableLoader();
       copyBtn.disabled = false;
     }
+    if (copied) showCopyFeedback(copyBtn);
   });
 }
 

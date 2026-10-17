@@ -1,5 +1,6 @@
+import { showCopyFeedback } from './copyFeedback.js';
 import { formatJsonLosslessly } from './jsonFormat.js';
-import { bsToastError, bsToastSuccess } from '../../../common/js/bsToast.js';
+import { bsToastError } from '../../../common/js/bsToast.js';
 /**
  * Results panel rendering, CSV export, and clipboard utilities.
  *
@@ -27,7 +28,7 @@ export function initResults() {
   copyResultsBtn.addEventListener('click', async () => {
     if (!lastColumns || !lastRows) return;
     if (await copyToClipboard(resultsToTSV(lastColumns, lastRows))) {
-      bsToastSuccess('Results copied to clipboard.');
+      showCopyFeedback(copyResultsBtn);
     }
   });
 
