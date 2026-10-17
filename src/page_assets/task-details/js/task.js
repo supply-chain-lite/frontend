@@ -1,3 +1,4 @@
+import { showCopyFeedback } from './copyFeedback.js';
 import api from '@/common/js/api';
 import { $, on } from '@/common/js/dom';
 import { bsToastSuccess, bsToastError } from '@/common/js/bsToast';
@@ -416,7 +417,7 @@ function bindLogButtons() {
     if (!logText) return;
     try {
       await window.navigator.clipboard.writeText(logText);
-      bsToastSuccess('Log copied to clipboard.');
+      showCopyFeedback($('#copyLogBtn'));
     } catch {
       const textarea = document.createElement('textarea');
       textarea.value = logText;
@@ -426,7 +427,7 @@ function bindLogButtons() {
       textarea.select();
       try {
         if (!document.execCommand('copy')) throw new Error('Copy command failed');
-        bsToastSuccess('Log copied to clipboard.');
+        showCopyFeedback($('#copyLogBtn'));
       } catch {
         bsToastError('Failed to copy log.');
       } finally {

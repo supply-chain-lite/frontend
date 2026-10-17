@@ -1,6 +1,7 @@
+import { showCopyFeedback } from './copyFeedback.js';
 import { formatJsonLosslessly } from './jsonFormat.js';
 import { Modal } from 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import { bsToastError, bsToastSuccess } from '../../../common/js/bsToast.js';
+import { bsToastError } from '../../../common/js/bsToast.js';
 
 const modalElement = document.getElementById('jsonValueModal');
 const content = document.getElementById('jsonValueContent');
@@ -65,7 +66,7 @@ document.getElementById('copyJsonValue').addEventListener('click', async () => {
   const text = content.textContent;
   try {
     await window.navigator.clipboard.writeText(text);
-    bsToastSuccess('JSON copied to clipboard.');
+    showCopyFeedback(document.getElementById('copyJsonValue'));
   } catch {
     // Keep the fallback inside the modal so Bootstrap's focus trap allows selection.
     const textarea = document.createElement('textarea');
@@ -76,7 +77,7 @@ document.getElementById('copyJsonValue').addEventListener('click', async () => {
     textarea.select();
     try {
       if (!document.execCommand('copy')) throw new Error('Copy failed');
-      bsToastSuccess('JSON copied to clipboard.');
+      showCopyFeedback(document.getElementById('copyJsonValue'));
     } catch {
       bsToastError('Could not copy JSON. Please select and copy the text manually.');
     } finally {
