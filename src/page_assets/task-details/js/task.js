@@ -418,7 +418,21 @@ function bindLogButtons() {
       await window.navigator.clipboard.writeText(logText);
       bsToastSuccess('Log copied to clipboard.');
     } catch {
-      bsToastError('Failed to copy log.');
+      const textarea = document.createElement('textarea');
+      textarea.value = logText;
+      textarea.className = 'position-fixed opacity-0';
+      textarea.setAttribute('aria-label', 'Task log to copy');
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        if (!document.execCommand('copy')) throw new Error('Copy command failed');
+        bsToastSuccess('Log copied to clipboard.');
+      } catch {
+        bsToastError('Failed to copy log.');
+      } finally {
+        textarea.remove();
+        $('#copyLogBtn').focus();
+      }
     }
   });
 

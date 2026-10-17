@@ -1,4 +1,5 @@
 import { formatJsonLosslessly } from './jsonFormat.js';
+import { bsToastError } from '../../../common/js/bsToast.js';
 /**
  * Results panel rendering, CSV export, and clipboard utilities.
  *
@@ -189,16 +190,29 @@ export function downloadCSV(csvString, filename) {
 }
 
 export async function copyToClipboard(text) {
+  const previousFocus = document.activeElement;
   try {
     await window.navigator.clipboard.writeText(text);
+    return true;
   } catch {
     const ta = document.createElement('textarea');
     ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
+    ta.className = 'position-fixed opacity-0';
+    ta.setAttribute('aria-label', 'Text to copy');
+    // Stay inside the active modal so Bootstrap's focus trap permits selection.
+    const container = document.querySelector('.modal.show') || document.body;
+    container.appendChild(ta);
+    try {
+      ta.select();
+      if (!document.execCommand('copy')) throw new Error('Copy command failed');
+      return true;
+    } catch {
+      bsToastError('Failed to copy. Please select and copy the text manually.');
+      return false;
+    } finally {
+      ta.remove();
+      previousFocus?.focus({ preventScroll: true });
+    }
   }
 }
 

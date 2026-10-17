@@ -522,8 +522,9 @@ function bindEvents() {
 
   // DDL: Copy DDL text
   on(ddlCopyBtn, 'click', async () => {
-    await copyToClipboard(ddlCode.textContent);
-    bsToastSuccess('DDL copied');
+    if (await copyToClipboard(ddlCode.textContent)) {
+      bsToastSuccess('DDL copied');
+    }
   });
 
   // DDL: Export full table to CSV

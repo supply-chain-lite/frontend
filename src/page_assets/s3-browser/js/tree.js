@@ -125,7 +125,10 @@ function appendFolderContents(list, prefix) {
   }
 
   items.forEach((item) => {
+    if (item.type === 'folder' && !String(item.name || '').trim()) return;
+
     const itemPrefix = item.type === 'folder' ? getItemPrefix(item, prefix) : '';
+    if (item.type === 'folder' && itemPrefix === prefix) return;
     const path =
       item.type === 'folder' ? locationPath(itemPrefix) : `${locationPath(prefix)}/${item.name}`;
     const isExpanded = item.type === 'folder' && expandedFolders.has(itemPrefix);
@@ -344,7 +347,21 @@ copyFolderUrlButton.addEventListener('click', async () => {
     await window.navigator.clipboard.writeText(selectedPath);
     copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
   } catch {
-    showFolderError('Unable to copy the S3 URL. Check clipboard permissions.');
+    const textarea = document.createElement('textarea');
+    textarea.value = selectedPath;
+    textarea.className = 'position-fixed opacity-0';
+    textarea.setAttribute('aria-label', 'S3 URL to copy');
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      if (!document.execCommand('copy')) throw new Error('Copy command failed');
+      copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
+    } catch {
+      showFolderError('Unable to copy the S3 URL. Check clipboard permissions.');
+    } finally {
+      textarea.remove();
+      copyFolderUrlButton.focus();
+    }
   }
 });
 
