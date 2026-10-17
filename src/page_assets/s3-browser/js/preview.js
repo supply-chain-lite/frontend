@@ -38,7 +38,6 @@ const videoExtensions = new Set([
   'mpeg',
   'mpg',
   'ogv',
-  'ts',
   'webm',
   'wmv',
 ]);
