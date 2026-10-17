@@ -125,7 +125,11 @@ export async function loadFilePreview({ key, bucket, settings }) {
     return;
   }
 
-  previewStatus.textContent = isImage ? 'Loading image…' : isVideo ? 'Loading video…' : 'Loading preview…';
+  previewStatus.textContent = isImage
+    ? 'Loading image…'
+    : isVideo
+      ? 'Loading video…'
+      : 'Loading preview…';
   try {
     if (isImage || isVideo) {
       const { presigned_url: presignedUrl } = await api.post('/s3/presigned-url', {
@@ -145,7 +149,7 @@ export async function loadFilePreview({ key, bucket, settings }) {
         () => {
           if (requestId === activeRequest) previewStatus.textContent = '';
         },
-        { once: true },
+        { once: true }
       );
       mediaElement.addEventListener(
         'error',
@@ -156,7 +160,7 @@ export async function loadFilePreview({ key, bucket, settings }) {
               : 'Unable to play this video format.';
           }
         },
-        { once: true },
+        { once: true }
       );
       if (isImage) {
         imagePreview.alt = key.split('/').pop() || 'S3 image preview';
