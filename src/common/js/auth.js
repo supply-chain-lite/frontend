@@ -6,6 +6,28 @@
  */
 
 const STORAGE_KEY = 'redirect_url';
+const DEFAULT_REDIRECT = '/home-page.html';
+
+/** Resolve untrusted destinations without allowing scripts, credentials, or other origins. */
+function safeRedirectUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new window.URL(value, window.location.href);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.origin !== window.location.origin ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    // Keep the absolute, parsed URL so a path beginning with // cannot be
+    // reinterpreted as a protocol-relative external destination on assignment.
+    return url.href;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Returns the current page URL (pathname + query string) to be sent
@@ -34,7 +56,7 @@ export function consumeRedirectUrl() {
   if (url) {
     sessionStorage.removeItem(STORAGE_KEY);
   }
-  return url || null;
+  return safeRedirectUrl(url);
 }
 
 /**
@@ -51,11 +73,13 @@ export function resolveRedirectUrl(apiUser, fallback = '/home-page.html') {
   const savedUrl = consumeRedirectUrl();
   if (savedUrl) return { url: savedUrl, source: 'saved' };
 
-  if (apiUser && typeof apiUser.redirect_url === 'string' && apiUser.redirect_url) {
-    return { url: apiUser.redirect_url, source: 'api' };
-  }
+  const apiUrl = safeRedirectUrl(apiUser?.redirect_url);
+  if (apiUrl) return { url: apiUrl, source: 'api' };
 
-  return { url: fallback, source: 'fallback' };
+  return {
+    url: safeRedirectUrl(fallback) || safeRedirectUrl(DEFAULT_REDIRECT),
+    source: 'fallback',
+  };
 }
 
 /**
@@ -67,13 +91,10 @@ export function resolveRedirectUrl(apiUser, fallback = '/home-page.html') {
  * @returns {boolean} Whether a redirect was performed.
  */
 export function handleAccessControlRedirect(apiUser) {
-  if (
-    apiUser &&
-    typeof apiUser.redirect_url === 'string' &&
-    apiUser.redirect_url &&
-    apiUser.redirect_url !== currentPageUrl()
-  ) {
-    window.location.href = apiUser.redirect_url;
+  const url = safeRedirectUrl(apiUser?.redirect_url);
+  const currentUrl = safeRedirectUrl(currentPageUrl());
+  if (url && url !== currentUrl) {
+    window.location.href = url;
     return true;
   }
   return false;
