@@ -227,3 +227,16 @@ import { $, on } from '@/common/js/dom';
 
 [MIT](LICENSE)
 
+Production builds include `LICENSE.txt`, `THIRD-PARTY-NOTICES.txt` (production
+dependencies and their upstream license/notice texts), and
+`licenses/Inconsolata-OFL.txt`. Keep these files with deployments and release
+archives. The notices are generated from the lockfile and installed packages;
+the build fails if a production dependency has no license text or its installed
+version differs from the lockfile. Build-only tooling is not included in these
+runtime notices.
+
+SheetJS is pinned to the official `0.20.3` tarball because the public npm `xlsx`
+package remains on the vulnerable `0.18.5` release. `npm ci` requires access to
+`cdn.sheetjs.com`; the lockfile records the tarball integrity hash. See the
+[upstream installation guidance](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/).
+

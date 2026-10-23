@@ -427,10 +427,10 @@ async function renderHistory() {
     const dbName = `${appState.projectName}/${appState.modelName}`;
 
     tr.innerHTML = `
-      <td class="text-truncate" style="max-width:120px" title="${esc(dbName)}">${esc(dbName)}</td>
-      <td class="font-monospace text-truncate" style="max-width:200px" title="${esc(entry.sql)}">${esc(entry.sql)}</td>
-      <td class="${statusClass} text-truncate">${esc(entry.status)}</td>
-      <td>${timeStr}</td>
+      <td class="text-truncate" style="max-width:120px"></td>
+      <td class="font-monospace text-truncate" style="max-width:200px"></td>
+      <td class="text-truncate"></td>
+      <td></td>
       <td class="text-center">
         <div class="d-flex gap-1 justify-content-center">
           <button class="btn btn-outline-dark btn-sm hist-use-btn" title="Execute">
@@ -441,6 +441,16 @@ async function renderHistory() {
           </button>
         </div>
       </td>`;
+
+    // API values must stay out of HTML, including quoted tooltip attributes.
+    const [databaseCell, sqlCell, statusCell, timeCell] = tr.cells;
+    databaseCell.textContent = dbName;
+    databaseCell.title = dbName;
+    sqlCell.textContent = entry.sql ?? '';
+    sqlCell.title = entry.sql ?? '';
+    statusCell.textContent = entry.status ?? '';
+    statusCell.classList.add(statusClass);
+    timeCell.textContent = timeStr;
 
     tr.querySelector('.hist-use-btn').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -607,12 +617,6 @@ function showBsTab(tabEl) {
   if (tabEl && window.bootstrap) {
     new window.bootstrap.Tab(tabEl).show();
   }
-}
-
-function esc(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
 }
 
 function escCsv(val) {
