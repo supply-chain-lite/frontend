@@ -210,7 +210,7 @@ async function getTableHeaders(appState) {
       head2.appendChild(th);
     }
 
-    // Enter applies an open dropdown; otherwise it applies the column's text filter.
+    // Enter applies an open dropdown or submits all column text filters.
     head2.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' || e.isComposing) return;
       const dropdown = e.target.closest('.input-group')?.querySelector('.dropdown-menu.show');
@@ -220,19 +220,13 @@ async function getTableHeaders(appState) {
         if (!e.repeat) dropdown.querySelector('.lov-apply-btn')?.click();
         return;
       }
-      const input = e.target;
-      if (input.tagName !== 'INPUT' || input.type !== 'text') return;
+      if (!e.target.matches('input[type="text"][data-col]')) return;
 
-      const col = input.dataset.col;
-      const val = input.value.trim();
-
-      if (!appState.textFilters) appState.textFilters = {};
-
-      if (val) {
-        appState.textFilters[col] = val;
-      } else {
-        delete appState.textFilters[col];
-      }
+      appState.textFilters = Object.fromEntries(
+        [...head2.querySelectorAll('input[type="text"][data-col]')]
+          .map((input) => [input.dataset.col, input.value.trim()])
+          .filter(([, value]) => value !== '')
+      );
       appState.currentPage = 1; // Reset to first page on filter change, since current page may become invalid
       appState.totalRowCount = null;
       hideSummaryRow();
