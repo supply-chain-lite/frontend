@@ -98,7 +98,7 @@ function renderPreview(columns, rows) {
   previewBody.replaceChildren(body);
 }
 
-export async function loadFilePreview({ key, bucket, settings }) {
+export async function loadFilePreview({ key, storageOptions }) {
   const extension = getExtension(key);
   const isImage = imageExtensions.has(extension);
   const isVideo = videoExtensions.has(extension);
@@ -119,7 +119,7 @@ export async function loadFilePreview({ key, bucket, settings }) {
   videoPreviewWrap.classList.toggle('d-none', !isVideo);
   previewTableWrap.classList.toggle('d-none', isImage || isVideo);
 
-  if (!settings.endpointURL) {
+  if (!storageOptions) {
     previewStatus.textContent = 'Add an endpoint URL in Settings to preview this file.';
     return;
   }
@@ -132,12 +132,8 @@ export async function loadFilePreview({ key, bucket, settings }) {
   try {
     if (isImage || isVideo) {
       const { presigned_url: presignedUrl } = await api.post('/s3/presigned-url', {
-        endpoint: settings.endpointURL,
-        bucket,
+        ...storageOptions,
         key,
-        ...(settings.region ? { region: settings.region } : {}),
-        access_key: settings.accessKey || '',
-        secret_key: settings.secretKey || '',
       });
       if (requestId !== activeRequest) return;
       if (!presignedUrl) throw new Error('The server did not return a preview URL.');
@@ -162,19 +158,15 @@ export async function loadFilePreview({ key, bucket, settings }) {
         { once: true }
       );
       if (isImage) {
-        imagePreview.alt = key.split('/').pop() || 'S3 image preview';
+        imagePreview.alt = key.split('/').pop() || 'Image preview';
       }
       mediaElement.src = new window.URL(presignedUrl).href;
       return;
     }
 
     const response = await api.post('/s3/preview', {
-      endpoint: settings.endpointURL,
-      bucket,
+      ...storageOptions,
       key,
-      ...(settings.region ? { region: settings.region } : {}),
-      access_key: settings.accessKey || '',
-      secret_key: settings.secretKey || '',
     });
     if (requestId !== activeRequest) return;
 
