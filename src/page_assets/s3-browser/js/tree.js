@@ -51,6 +51,22 @@ function readSettings() {
   }
 }
 
+function storageRequestOptions() {
+  const { scheme, bucket } = rootLocation;
+  if (scheme === 'gs') return { scheme, bucket };
+
+  const settings = readSettings();
+  if (!settings.endpointURL) return null;
+  return {
+    scheme,
+    bucket,
+    endpoint: settings.endpointURL,
+    ...(settings.region ? { region: settings.region } : {}),
+    access_key: settings.accessKey || '',
+    secret_key: settings.secretKey || '',
+  };
+}
+
 function saveRoot(root) {
   try {
     localStorage.setItem(ROOT_STORAGE_KEY, root);
@@ -59,18 +75,21 @@ function saveRoot(root) {
   }
 }
 
-function parseS3Location(value) {
+function parseStorageLocation(value) {
   const trimmed = value.trim();
-  const match = trimmed.match(/^s3:\/\/([^/?#]+)(?:\/([^?#]*))?\/?$/i);
-  if (!match) throw new Error('Enter an S3 path such as s3://bucket-name/folder.');
-  const bucket = decodeURIComponent(match[1]);
-  if (!bucket) throw new Error('Enter an S3 bucket, such as s3://bucket-name/path.');
-  return { bucket, prefix: normalizePrefix(decodeURIComponent(match[2] || '')) };
+  const match = trimmed.match(/^(s3|gs):\/\/([^/?#]+)(?:\/([^?#]*))?\/?$/i);
+  if (!match) throw new Error('Enter a bucket path starting with s3:// or gs://.');
+  const [, scheme, bucket, prefix = ''] = match;
+  return {
+    scheme: scheme.toLowerCase(),
+    bucket: decodeURIComponent(bucket),
+    prefix: normalizePrefix(decodeURIComponent(prefix)),
+  };
 }
 
 const tree = document.createElement('div');
 tree.className = 's3-tree';
-tree.setAttribute('aria-label', 'S3 file tree');
+tree.setAttribute('aria-label', 'Object browser file tree');
 explorer.appendChild(tree);
 
 function normalizePrefix(prefix) {
@@ -78,20 +97,22 @@ function normalizePrefix(prefix) {
 }
 
 function locationPath(prefix = rootLocation.prefix) {
-  return `s3://${rootLocation.bucket}${prefix ? `/${prefix}` : ''}`;
+  const { scheme, bucket } = rootLocation;
+  const encodedPrefix = prefix.split('/').map(encodeURIComponent).join('/');
+  return `${scheme}://${encodeURIComponent(bucket)}${encodedPrefix ? `/${encodedPrefix}` : ''}`;
 }
 
 function getItemPrefix(item, parentPrefix) {
   let key = String(item.key || item.name).replace(/^\/+|\/+$/g, '');
-  if (key.startsWith('s3://')) {
-    const location = parseS3Location(key);
+  if (/^(s3|gs):\/\//i.test(key)) {
+    const location = parseStorageLocation(key);
     key = location.prefix;
   }
   if (!parentPrefix || key === parentPrefix || key.startsWith(`${parentPrefix}/`)) return key;
   return normalizePrefix(`${parentPrefix}/${key}`);
 }
 
-function makeButton({ name, path, type, childCount, expanded = false }) {
+function makeButton({ name, path, prefix, type, childCount, expanded = false }) {
   const button = document.createElement('button');
   const icon = document.createElement('i');
   const label = document.createElement('span');
@@ -99,10 +120,7 @@ function makeButton({ name, path, type, childCount, expanded = false }) {
   button.type = 'button';
   button.className = `s3-tree-node ${type === 'folder' ? 's3-tree-folder' : 's3-tree-file'}`;
   button.dataset.path = path;
-  button.dataset.prefix =
-    path === locationPath('')
-      ? rootLocation.prefix
-      : path.slice(`s3://${rootLocation.bucket}/`.length);
+  button.dataset.prefix = prefix;
   button.dataset.type = type;
   button.dataset.name = name;
   button.dataset.childCount = String(childCount ?? 0);
@@ -140,13 +158,16 @@ function appendFolderContents(list, prefix) {
     const itemPrefix = item.type === 'folder' ? getItemPrefix(item, prefix) : '';
     if (item.type === 'folder' && itemPrefix === prefix) return;
     const path =
-      item.type === 'folder' ? locationPath(itemPrefix) : `${locationPath(prefix)}/${item.name}`;
+      item.type === 'folder'
+        ? locationPath(itemPrefix)
+        : `${locationPath(prefix)}/${encodeURIComponent(item.name)}`;
     const isExpanded = item.type === 'folder' && expandedFolders.has(itemPrefix);
     const children = folderContents.get(itemPrefix);
     const listItem = document.createElement('li');
     const button = makeButton({
       name: item.name,
       path,
+      prefix: itemPrefix,
       type: item.type,
       childCount: children?.length ?? 0,
       expanded: isExpanded,
@@ -181,11 +202,11 @@ function renderTree() {
   const rootButton = makeButton({
     name: rootPath,
     path: rootPath,
+    prefix: rootLocation.prefix,
     type: 'folder',
     childCount: folderContents.get(rootLocation.prefix)?.length ?? 0,
     expanded: isExpanded,
   });
-  rootButton.dataset.prefix = rootLocation.prefix;
   rootButton.setAttribute('aria-label', `${rootPath}, folder`);
   rootItem.appendChild(rootButton);
 
@@ -215,11 +236,10 @@ function invalidateFolderRequests() {
 async function loadFolder(prefix) {
   const normalizedPrefix = normalizePrefix(prefix);
   const generation = requestGeneration;
-  const bucket = rootLocation.bucket;
-  const requestKey = `${generation}:${bucket}/${normalizedPrefix}`;
+  const requestKey = `${generation}:${locationPath(normalizedPrefix)}`;
   if (folderContents.has(normalizedPrefix)) return folderContents.get(normalizedPrefix);
-  const settings = readSettings();
-  if (!settings.endpointURL) {
+  const storageOptions = storageRequestOptions();
+  if (!storageOptions) {
     showFolderError('Add an endpoint URL in Settings before browsing this bucket.');
     return;
   }
@@ -229,12 +249,8 @@ async function loadFolder(prefix) {
   renderTree();
   const request = api
     .post('/s3/list', {
-      endpoint: settings.endpointURL,
-      bucket,
+      ...storageOptions,
       prefix: normalizedPrefix,
-      ...(settings.region ? { region: settings.region } : {}),
-      access_key: settings.accessKey || '',
-      secret_key: settings.secretKey || '',
     })
     .then((response) => {
       if (generation !== requestGeneration) return [];
@@ -323,8 +339,7 @@ function selectNode(button) {
   } else {
     loadFilePreview({
       key: button.dataset.key,
-      bucket: rootLocation.bucket,
-      settings: readSettings(),
+      storageOptions: storageRequestOptions(),
     });
   }
 }
@@ -357,21 +372,21 @@ tree.addEventListener('click', (event) => {
 copyFolderUrlButton.addEventListener('click', async () => {
   try {
     await window.navigator.clipboard.writeText(selectedPath);
-    copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
+    copyFolderUrlStatus.textContent = 'URL copied to clipboard.';
     showUrlCopied();
   } catch {
     const textarea = document.createElement('textarea');
     textarea.value = selectedPath;
     textarea.className = 'position-fixed opacity-0';
-    textarea.setAttribute('aria-label', 'S3 URL to copy');
+    textarea.setAttribute('aria-label', 'Object URL to copy');
     document.body.appendChild(textarea);
     textarea.select();
     try {
       if (!document.execCommand('copy')) throw new Error('Copy command failed');
-      copyFolderUrlStatus.textContent = 'S3 URL copied to clipboard.';
+      copyFolderUrlStatus.textContent = 'URL copied to clipboard.';
       showUrlCopied();
     } catch {
-      showFolderError('Unable to copy the S3 URL. Check clipboard permissions.');
+      showFolderError('Unable to copy the URL. Check clipboard permissions.');
     } finally {
       textarea.remove();
       copyFolderUrlButton.focus();
@@ -388,8 +403,8 @@ downloadFileButton.addEventListener('click', async () => {
   const key = selectedButton?.dataset.key;
   if (!key || selectedButton.dataset.type !== 'file') return;
 
-  const settings = readSettings();
-  if (!settings.endpointURL) {
+  const storageOptions = storageRequestOptions();
+  if (!storageOptions) {
     showFolderError('Add an endpoint URL in Settings before downloading this file.');
     return;
   }
@@ -400,12 +415,8 @@ downloadFileButton.addEventListener('click', async () => {
   copyFolderUrlStatus.textContent = 'Preparing download…';
   try {
     const { presigned_url: presignedUrl } = await api.post('/s3/presigned-url', {
-      endpoint: settings.endpointURL,
-      bucket: rootLocation.bucket,
+      ...storageOptions,
       key,
-      ...(settings.region ? { region: settings.region } : {}),
-      access_key: settings.accessKey || '',
-      secret_key: settings.secretKey || '',
     });
     if (!presignedUrl) throw new Error('The server did not return a download URL.');
     const downloadUrl = new window.URL(presignedUrl).href;
@@ -439,10 +450,10 @@ collapseFoldersButton.addEventListener('click', () => {
 
 function openRoot(value, persist = false) {
   try {
-    rootLocation = parseS3Location(value);
+    rootLocation = parseStorageLocation(value);
     upOneFolderButton.disabled = !rootLocation.prefix;
     invalidateFolderRequests();
-    rootInput.value = `s3://${rootLocation.bucket}${rootLocation.prefix ? `/${rootLocation.prefix}` : ''}`;
+    rootInput.value = locationPath();
     if (persist) saveRoot(rootInput.value);
     rootError.classList.add('d-none');
     rootError.textContent = '';
@@ -474,7 +485,7 @@ upOneFolderButton.addEventListener('click', () => {
   const parentSegments = rootLocation.prefix.split('/');
   parentSegments.pop();
   const parentPrefix = parentSegments.join('/');
-  openRoot(`s3://${rootLocation.bucket}${parentPrefix ? `/${parentPrefix}` : ''}`, true);
+  openRoot(locationPath(parentPrefix), true);
 });
 
 settingsForm.addEventListener('submit', (event) => {
